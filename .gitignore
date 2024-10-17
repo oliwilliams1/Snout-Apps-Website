@@ -1,6 +1,9 @@
 # Token
 *.token
 
+# Tailwind
+output.css
+
 # Logs
 logs
 *.log
