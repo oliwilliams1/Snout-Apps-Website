@@ -1,32 +1,18 @@
-import { invoke } from "@tauri-apps/api/core";
 import * as yaml from 'yaml';
 
-async function setPosition(): Promise<void> {
-  try {
-    await invoke('set_window_position');
-  } catch (error) {
-    console.error("Error setting window position:", error);
-  }
+const mainInputBox = document.getElementById("mainInput") as HTMLInputElement;
+const secondaryInputBox = document.getElementById("secondaryInput") as HTMLInputElement;
+const priorityDropdown = document.getElementById("priorityList") as HTMLSelectElement;
+const additionalFields = document.getElementById('additionalFields');
+const addTaskButton = document.getElementById('addTask');
+
+interface Task {
+  title: string;
+  description: string;
+  priority: number;
 }
 
-async function closeWindow(): Promise<void> {
-  try {
-    await invoke('close_window');
-  } catch (error) {
-    console.error("Error closing window:", error);
-  }
-}
-
-document.addEventListener('keydown', (event) => {
-  if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {
-    setPosition();
-  }
-  if ((event.ctrlKey && event.shiftKey && event.code === 'KeyA') || (event.ctrlKey && event.code === 'KeyW')) {
-    closeWindow();
-  }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
+function renderTasks() {
   if (localStorage.getItem("todo.yaml") === null) {
     localStorage.setItem("todo.yaml", `
 tasks:
@@ -68,23 +54,43 @@ tasks:
   } else {
     console.error("Container not found");
   }
-});
-
-const mainInputBox = document.getElementById("mainInput");
-const additionalFields = document.getElementById('additionalFields');
-const addTaskButton = document.getElementById('addTask');
+}
 
 mainInputBox?.addEventListener('focus', function() {
-  console.log('Input field is in focus');
   if (additionalFields) {
     additionalFields.classList.add('show');
   }
 });
 
-function addTask() {
-  if (additionalFields) {
-    additionalFields.classList.remove('show');
-  }
+async function addTask(task : Task) : Promise<void> {
+  const data = yaml.parse(localStorage.getItem("todo.yaml")!);
+  data.tasks.push(task);
+  localStorage.setItem("todo.yaml", yaml.stringify(data));
+  renderTasks();
 }
 
-addTaskButton?.addEventListener('click', addTask);
+function addTaskButtonCallback() {
+  if (!additionalFields) {
+    return;
+  }
+
+  if (mainInputBox.value.trim() === '' || secondaryInputBox.value.trim() === '' || priorityDropdown.value === "-1") {
+    return;
+  }
+
+  const task : Task = {
+    title: mainInputBox.value,
+    description: secondaryInputBox.value,
+    priority: parseInt(priorityDropdown.value)
+  }
+
+  addTask(task);
+
+  additionalFields.classList.remove('show');
+  mainInputBox.value = '';
+  secondaryInputBox.value = '';
+  priorityDropdown.value = "-1";
+}
+
+document.addEventListener('DOMContentLoaded', renderTasks);
+addTaskButton?.addEventListener('click', addTaskButtonCallback);

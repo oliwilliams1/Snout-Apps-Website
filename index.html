@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <title>Tauri App</title>
     <script type="module" src="src/main.ts" defer></script>
+    <script type="module" src="src/form-handler.ts" defer></script>
   </head>
   <body class="bg-snout-base">
     <!-- Navigation panel -->
@@ -51,13 +52,14 @@
         <input type="text" id="mainInput" class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Add a task">
       </div>
       <div id="additionalFields" class="flex w-full gap-4 mt-4 additionalFields">
-        <input type="text" class="w-full mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Description...">
+        <input type="text" id="secondaryInput" class="w-full mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Description">
         <form>
-          <select id="priority" name="priority" class="mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light flex-shrink-0">
-            <option value="-1">No Priority</option>
+          <select id="priorityList" name="priority" class="mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light flex-shrink-0">
+            <option value="-1">Select Priority</option>
             <option value="1">High</option>
             <option value="2">Medium</option>
             <option value="3">Low</option>
+            <option value="4">No Priority</option>
           </select>
         </form>
         <button class="w-12 h-12 bg-snout-deep rounded-full flex-shrink-0" id="addTask">+</button>
