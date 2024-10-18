@@ -1,7 +1,18 @@
-# Tauri + Vanilla TS
+# Snout Apps
+A bunch of utilites and apps for the desktop made with Tauri
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+# Instalation
+Clone this repository
+```bash
+git clone https://github.com/oliwilliams1/Snout-Apps
+```
+Install the dependencies
+```bash
+cd snout-apps
+npm install
+```
+Build the app (may take a while)
+```bash
+npm run build
+```
+Now an setup executable should be ready
