@@ -5,3 +5,15 @@
 :root {
     user-select: none;
 }
+
+.additionalFields {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, opacity 0.2s ease-out;
+}
+
+.additionalFields.show {
+    max-height: 200px;
+    opacity: 1;
+}

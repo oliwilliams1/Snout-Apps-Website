@@ -69,3 +69,22 @@ tasks:
     console.error("Container not found");
   }
 });
+
+const mainInputBox = document.getElementById("mainInput");
+const additionalFields = document.getElementById('additionalFields');
+const addTaskButton = document.getElementById('addTask');
+
+mainInputBox?.addEventListener('focus', function() {
+  console.log('Input field is in focus');
+  if (additionalFields) {
+    additionalFields.classList.add('show');
+  }
+});
+
+function addTask() {
+  if (additionalFields) {
+    additionalFields.classList.remove('show');
+  }
+}
+
+addTaskButton?.addEventListener('click', addTask);
