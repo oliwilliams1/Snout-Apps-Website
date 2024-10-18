@@ -18,8 +18,14 @@ function addTask(task : Task) {
   data.tasks.push(task);
   localStorage.setItem("todo.yaml", yaml.stringify(data));
   console.log("Task added");
-  renderTasks();
-  renderPriorityGlance();
+  render();
+}
+
+function deleteTask(taskName: string) {
+  const data = yaml.parse(localStorage.getItem("todo.yaml")!);
+  data.tasks = data.tasks.filter((task: Task) => task.title !== taskName);
+  localStorage.setItem("todo.yaml", yaml.stringify(data));
+  render();
 }
 
 function renderPriorityGlance() {
@@ -54,6 +60,11 @@ function renderPriorityGlance() {
   <div class="w-5 h-5 bg-red-400 rounded-full flex items-center justify-center">
     <p class="text-snout-base">${highPriorityCount}</p>
   </div>`;
+}
+
+function render() {
+  renderTasks();
+  renderPriorityGlance();
 }
 
 function renderTasks() {
@@ -102,9 +113,10 @@ function renderTasks() {
             <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded">
             <div>
               <h1 class="text-lg font-semibold text-snout-bright">${task.title}</h1>
-              <h2 class="text-xs font-extralight text-snout-light">${task.description}</h2>
+              ${task.description === null ? "" : `<h2 class="text-xs font-extralight text-snout-light">` + task.description + `</h2>`}
             </div>
           </div>
+          <button id="delete-button-${task.title}">x</button>
           <div class="flex gap-1 ml-auto mr-3">
             <div class="w-1.5 h-1.5 rounded-full bg-snout-bright"></div>
             <div class="w-1.5 h-1.5 rounded-full bg-snout-bright"></div>
@@ -118,10 +130,15 @@ function renderTasks() {
       } else {
         nonPriorityTaskContainerInnerHTML += html;
       }
-
-      priorityTaskContainer.innerHTML = priorityTaskContainerInnerHTML;
-      nonPriorityTaskContainer.innerHTML = nonPriorityTaskContainerInnerHTML;
     }
+    priorityTaskContainer.innerHTML = priorityTaskContainerInnerHTML;
+    nonPriorityTaskContainer.innerHTML = nonPriorityTaskContainerInnerHTML;
+
+    for (const task of data.tasks) {
+      document.getElementById(`delete-button-${task.title}`)?.addEventListener('click', function() {
+        deleteTask(task.title);
+      })
+    }  
   }
 }
 
@@ -136,7 +153,7 @@ function addTaskButtonCallback() {
     return;
   }
 
-  if (mainInputBox.value.trim() === '' || secondaryInputBox.value.trim() === '' || priorityDropdown.value === "-1") {
+  if (mainInputBox.value.trim() === '' || priorityDropdown.value === "-1") {
     return;
   }
 
@@ -154,9 +171,6 @@ function addTaskButtonCallback() {
   priorityDropdown.value = "-1";
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  renderTasks();
-  renderPriorityGlance();
-});
+document.addEventListener('DOMContentLoaded', render);
 
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
