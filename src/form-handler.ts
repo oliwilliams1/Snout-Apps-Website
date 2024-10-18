@@ -5,6 +5,7 @@ const secondaryInputBox = document.getElementById("secondaryInput") as HTMLInput
 const priorityDropdown = document.getElementById("priorityList") as HTMLSelectElement;
 const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
+const priorityGlance = document.getElementById('priorityGlance');
 
 interface Task {
   title: string;
@@ -18,6 +19,41 @@ function addTask(task : Task) {
   localStorage.setItem("todo.yaml", yaml.stringify(data));
   console.log("Task added");
   renderTasks();
+  renderPriorityGlance();
+}
+
+function renderPriorityGlance() {
+  if (priorityGlance === null) return;
+
+  const data = yaml.parse(localStorage.getItem("todo.yaml")!);
+  let lowPriorityCount = 0;
+  let mediumPriorityCount = 0;
+  let highPriorityCount = 0;
+
+  for (const task of data.tasks) {
+    switch (task.priority) {
+      case 1:
+        highPriorityCount++;
+        break;
+      case 2:
+        mediumPriorityCount++;
+        break;
+      case 3:
+        lowPriorityCount++;
+        break;
+    }
+  }
+
+  priorityGlance.innerHTML = `
+  <div class="w-5 h-5 bg-green-400 rounded-full flex items-center justify-center">
+    <p class="text-snout-base">${lowPriorityCount}</p>
+  </div>
+  <div class="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+    <p class="text-snout-base">${mediumPriorityCount}</p>
+  </div>
+  <div class="w-5 h-5 bg-red-400 rounded-full flex items-center justify-center">
+    <p class="text-snout-base">${highPriorityCount}</p>
+  </div>`;
 }
 
 function renderTasks() {
@@ -118,5 +154,9 @@ function addTaskButtonCallback() {
   priorityDropdown.value = "-1";
 }
 
-document.addEventListener('DOMContentLoaded', renderTasks);
+document.addEventListener('DOMContentLoaded', function () {
+  renderTasks();
+  renderPriorityGlance();
+});
+
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
