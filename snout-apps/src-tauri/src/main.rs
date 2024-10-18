@@ -1,3 +1,4 @@
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use tauri::{Manager, Window};
 use device_query::{DeviceQuery, DeviceState};
@@ -24,7 +25,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![set_window_position, close_window])
         .setup(|app| {
-            let main_window = app.get_window("main").unwrap();
+            let main_window = app.get_webview_window("main").unwrap();
             main_window.set_title("My Tauri App")?;
             Ok(())
         })
