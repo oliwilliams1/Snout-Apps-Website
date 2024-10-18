@@ -12,27 +12,56 @@ interface Task {
   priority: number;
 }
 
-function renderTasks() {
-  if (localStorage.getItem("todo.yaml") === null) {
-    localStorage.setItem("todo.yaml", `
-tasks:
-  - task: 
-    title: "Task one"
-    description: "Task one description"
-    completed: 0
-  `);
-  }
-  
+function addTask(task : Task) {
   const data = yaml.parse(localStorage.getItem("todo.yaml")!);
-  
-  const container = document.getElementById('listContainer')!
-  let containerInnerHTML : string= "";
+  data.tasks.push(task);
+  localStorage.setItem("todo.yaml", yaml.stringify(data));
+  console.log("Task added");
+  renderTasks();
+}
 
-  if (container) {
+function renderTasks() {
+  const storedData = localStorage.getItem("todo.yaml");
+  let data;
+
+  if (!storedData) {
+    localStorage.setItem("todo.yaml", yaml.stringify({ tasks: [] }));
+    return;
+  }
+
+  data = yaml.parse(storedData);
+  if (!data.tasks) {
+    data.tasks = [];
+  }
+
+  data.tasks.sort((a: any, b: any) => {
+    return Number(a.priority) - Number(b.priority);
+  });
+
+  const priorityTaskContainer = document.getElementById('priorityTaskContainer');
+  const nonPriorityTaskContainer = document.getElementById('nonPriorityTaskContainer');
+  let priorityTaskContainerInnerHTML = "";
+  let nonPriorityTaskContainerInnerHTML = "";
+
+  if (priorityTaskContainer && nonPriorityTaskContainer) {
     for (const task of data.tasks) {
-      containerInnerHTML += `
+      let priorityColour = "colour-no-priority";
+      switch (task.priority) {
+        case 1:
+          priorityColour = "colour-high-priority"
+          break;
+
+        case 2:
+          priorityColour = "colour-medium-priority"
+          break;
+
+        case 3:
+          priorityColour = "colour-low-priority"
+          break
+      }
+      let html = `
         <div class="flex w-full items-center">
-          <div class="rounded-full bg-red-400 w-1 h-10"></div>
+          <div class="rounded-full ${priorityColour} w-1 h-10"></div>
           <div class="flex flex-row items-center ml-4">
             <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded">
             <div>
@@ -47,12 +76,16 @@ tasks:
           </div>
         </div> <br>
       `;
-    }
+      
+      if (task.priority !== 4) {
+        priorityTaskContainerInnerHTML += html;
+      } else {
+        nonPriorityTaskContainerInnerHTML += html;
+      }
 
-    container.innerHTML = containerInnerHTML;
-    console.log(data);
-  } else {
-    console.error("Container not found");
+      priorityTaskContainer.innerHTML = priorityTaskContainerInnerHTML;
+      nonPriorityTaskContainer.innerHTML = nonPriorityTaskContainerInnerHTML;
+    }
   }
 }
 
@@ -61,13 +94,6 @@ mainInputBox?.addEventListener('focus', function() {
     additionalFields.classList.add('show');
   }
 });
-
-async function addTask(task : Task) : Promise<void> {
-  const data = yaml.parse(localStorage.getItem("todo.yaml")!);
-  data.tasks.push(task);
-  localStorage.setItem("todo.yaml", yaml.stringify(data));
-  renderTasks();
-}
 
 function addTaskButtonCallback() {
   if (!additionalFields) {

@@ -17,3 +17,19 @@
     max-height: 200px;
     opacity: 1;
 }
+
+.colour-no-priority {
+    background-color: #22d3ee;
+}
+
+.colour-low-priority {
+    background-color: #4ade80;
+}
+
+.colour-medium-priority {
+    background-color: #facc15;
+}
+
+.colour-high-priority {
+    background-color: #f87171;
+}
