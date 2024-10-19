@@ -1,3 +1,5 @@
+import * as snoutApi from './sync-tasks';
+
 const mainInputBox = document.getElementById("mainInput") as HTMLInputElement;
 const secondaryInputBox = document.getElementById("secondaryInput") as HTMLInputElement;
 const priorityDropdown = document.getElementById("priorityList") as HTMLSelectElement;
@@ -5,32 +7,28 @@ const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
 
-interface Task {
-  title: string;
-  description: string;
-  priority: number;
-  completed: boolean;
-}
-
-const dbName = "TodoDB";
-const storeName = "tasks";
-let db: IDBDatabase;
+const snoutDB: snoutApi.snoutDbData = {
+  dbName: "TodoDB",
+  storeName: "tasks",
+  db: {} as IDBDatabase
+};
 
 function render() {
   renderTasks();
   renderPriorityGlance();
+  snoutApi.exportTasksToYAML(snoutDB);
 }
 
 function initDB() {
-  const request = indexedDB.open(dbName, 1);
+  const request = indexedDB.open(snoutDB.dbName, 1);
 
   request.onupgradeneeded = (event) => {
-    db = (event.target as IDBOpenDBRequest).result;
-    db.createObjectStore(storeName, { keyPath: "title" });
+    snoutDB.db = (event.target as IDBOpenDBRequest).result;
+    snoutDB.db.createObjectStore(snoutDB.storeName, { keyPath: "title" });
   };
 
   request.onsuccess = (event) => {
-    db = (event.target as IDBOpenDBRequest).result;
+    snoutDB.db = (event.target as IDBOpenDBRequest).result;
     render();
   };
 
@@ -39,9 +37,9 @@ function initDB() {
   };
 }
 
-function addTask(task: Task) {
-  const transaction = db.transaction([storeName], "readwrite");
-  const store = transaction.objectStore(storeName);
+function addTask(task: snoutApi.Task) {
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+  const store = transaction.objectStore(snoutDB.storeName);
   
   store.put(task);
   
@@ -56,8 +54,8 @@ function addTask(task: Task) {
 }
 
 function deleteTask(taskName: string) {
-  const transaction = db.transaction([storeName], "readwrite");
-  const store = transaction.objectStore(storeName);
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+  const store = transaction.objectStore(snoutDB.storeName);
 
   store.delete(taskName);
 
@@ -73,12 +71,12 @@ function deleteTask(taskName: string) {
 function renderPriorityGlance() {
   if (priorityGlance === null) return;
 
-  const transaction = db.transaction([storeName], "readonly");
-  const store = transaction.objectStore(storeName);
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
+  const store = transaction.objectStore(snoutDB.storeName);
   const request = store.getAll();
 
   request.onsuccess = () => {
-    const tasks: Task[] = request.result;
+    const tasks: snoutApi.Task[] = request.result;
     let lowPriorityCount = 0;
     let mediumPriorityCount = 0;
     let highPriorityCount = 0;
@@ -111,12 +109,12 @@ function renderPriorityGlance() {
 }
 
 function renderTasks() {
-  const transaction = db.transaction([storeName], "readonly");
-  const store = transaction.objectStore(storeName);
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
+  const store = transaction.objectStore(snoutDB.storeName);
   const request = store.getAll();
 
   request.onsuccess = () => {
-    const tasks: Task[] = request.result;
+    const tasks: snoutApi.Task[] = request.result;
     tasks.sort((a, b) => a.priority - b.priority);
 
     const priorityTaskContainer = document.getElementById('priorityTaskContainer');
@@ -198,7 +196,7 @@ function addTaskButtonCallback() {
     return;
   }
 
-  const task: Task = {
+  const task: snoutApi.Task = {
     title: mainInputBox.value,
     description: secondaryInputBox.value,
     priority: parseInt(priorityDropdown.value),
