@@ -82,6 +82,7 @@ export interface Task {
   priority: number;
   completed: boolean;
   dateAdded: string;
+  uniqueId: number;
 }
 
 export interface SnoutDbData {
@@ -123,10 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const api_key = getCookie('snoutGithubToken');
   const p_gistId = getCookie('snoutGistId');
   
-  console.log("API key:", api_key, "Gist ID:", p_gistId);
-
   if (!api_key || !p_gistId) {
     warningModal?.classList.remove('hidden');
+    warningModal?.classList.add('flex');
     console.log("No API key found in cookies, asking user now");
 
     updateButton?.addEventListener('click', () => {
@@ -135,10 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const snoutGithubToken = tokenInput.value;
       setCookie('snoutGithubToken', snoutGithubToken, 330);
       setCookie('snoutGistId', snoutGistId, 999999);
-      warningModal?.classList.add('hidden');
-
-      octokit = new Octokit({ auth: snoutGithubToken });
-      gistId = snoutGistId;
+      document.location.reload();
     });
   } else {
     octokit = new Octokit({ auth: api_key });

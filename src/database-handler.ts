@@ -24,7 +24,7 @@ function initDB() {
 
   request.onupgradeneeded = (event) => {
     snoutDB.db = (event.target as IDBOpenDBRequest).result;
-    snoutDB.db.createObjectStore(snoutDB.storeName, { keyPath: "title" });
+    snoutDB.db.createObjectStore(snoutDB.storeName, { keyPath: "uniqueId" });
   };
 
   request.onsuccess = (event) => {
@@ -41,6 +41,7 @@ function addTask(task: snoutApi.Task) {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
   const store = transaction.objectStore(snoutDB.storeName);
   
+  // Use store.put(task) without a key parameter
   store.put(task);
   
   transaction.oncomplete = () => {
@@ -54,11 +55,11 @@ function addTask(task: snoutApi.Task) {
   };
 }
 
-function deleteTask(taskName: string) {
+function deleteTask(taskUniqueID: number) {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
   const store = transaction.objectStore(snoutDB.storeName);
 
-  store.delete(taskName);
+  store.delete(taskUniqueID);
 
   transaction.oncomplete = () => {
     render();
@@ -149,9 +150,9 @@ function renderTasks() {
                 ${task.description ? `<h2 class="text-xs font-extralight text-snout-light">${task.description}</h2>` : ""}
               </div>
             </div>
-            <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.title}">
-              <div class="hidden absolute mt-20 w-16 rounded-lg" id="task-option-menu-${task.title}">
-                <button class="w-full h-8 rounded-lg bg-snout-deep text-snout-light" id="delete-button-${task.title}">x</button>
+            <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.uniqueId}">
+              <div class="hidden absolute mt-20 w-16 rounded-lg" id="task-option-menu-${task.uniqueId}">
+                <button class="w-full h-8 rounded-lg bg-snout-deep text-snout-light" id="delete-button-${task.uniqueId}">x</button>
               </div>
               <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
               <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
@@ -171,12 +172,12 @@ function renderTasks() {
       nonPriorityTaskContainer.innerHTML = nonPriorityTaskContainerInnerHTML;
 
       for (const task of tasks) {
-        document.getElementById(`task-options-${task.title}`)?.addEventListener('click', function() {
-          document.getElementById(`task-option-menu-${task.title}`)?.classList.toggle('hidden');
+        document.getElementById(`task-options-${task.uniqueId}`)?.addEventListener('click', function() {
+          document.getElementById(`task-option-menu-${task.uniqueId}`)?.classList.toggle('hidden');
         })
 
-        document.getElementById(`delete-button-${task.title}`)?.addEventListener('click', function() {
-          deleteTask(task.title);
+        document.getElementById(`delete-button-${task.uniqueId}`)?.addEventListener('click', function() {
+          deleteTask(task.uniqueId);
         });
       }
     }
@@ -198,19 +199,42 @@ function addTaskButtonCallback() {
     return;
   }
 
-  const task: snoutApi.Task = {
-    title: mainInputBox.value,
-    description: secondaryInputBox.value,
-    priority: parseInt(priorityDropdown.value),
-    completed: false,
-    dateAdded: new Date().toISOString()
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
+  const store = transaction.objectStore(snoutDB.storeName);
+  const request = store.getAll();
+
+  request.onsuccess = () => {
+    const tasks: snoutApi.Task[] = request.result;
+    let p_uniqueId = 0;
+
+    for (const task of tasks) {
+      if (task.uniqueId > p_uniqueId) {
+        p_uniqueId = task.uniqueId;
+      }
+    }
+
+    p_uniqueId += 1;
+
+    const task: snoutApi.Task = {
+      title: mainInputBox.value,
+      description: secondaryInputBox.value,
+      priority: parseInt(priorityDropdown.value),
+      completed: false,
+      dateAdded: new Date().toISOString(),
+      uniqueId: p_uniqueId
+    };
+
+    addTask(task);
+
+    additionalFields.classList.remove('show');
+    mainInputBox.value = '';
+    secondaryInputBox.value = '';
+    priorityDropdown.value = "-1";
   };
 
-  addTask(task);
-  additionalFields.classList.remove('show');
-  mainInputBox.value = '';
-  secondaryInputBox.value = '';
-  priorityDropdown.value = "-1";
+  request.onerror = (event) => {
+    console.error("Error fetching tasks:", (event.target as IDBRequest).error);
+  };
 }
 
 async function syncDB() {
@@ -246,41 +270,106 @@ async function syncDB() {
     }
   });
 
-  // Synchronization Logic
+  // Handle scenario where local is empty and online has tasks
   if (!latestDateLocal && latestDateOnline) {
-    // No local tasks, add all online tasks
-    console.log("No local tasks, setting online tasks...");
-    tasksOnline.forEach(task => addTask(task));
-  } else if (latestDateLocal && latestDateOnline) {
-    if (latestDateLocal > latestDateOnline) {
-      // Local tasks are newer, update Gist
-      console.log("Local tasks are newer, syncing Gist...");
-      await snoutApi.updateGist(snoutDB);
-    } else {
-      // Online tasks are newer, fetch and add them
-      console.log("Online tasks are newer, setting local tasks...");
-      tasksOnline.forEach(task => {
-        const existingTask = tasksLocal.find(t => t.title === task.title);
-        if (!existingTask) {
-          addTask(task);
-        }
+    await Promise.all(tasksOnline.map(task => {
+      return new Promise((resolve, reject) => {
+        const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+        const writeStore = writeTransaction.objectStore(snoutDB.storeName);
+        const request = writeStore.put(task);
+        request.onsuccess = resolve;
+        request.onerror = reject;
       });
-    }
-  } else if (latestDateLocal && !latestDateOnline) {
-    // If online tasks are not present, update Gist
-    console.log("No online tasks, syncing Gist...");
+    }));
+  }
+  
+  // Handle scenario where online is empty and local has tasks
+  if (latestDateLocal && !latestDateOnline) {
     await snoutApi.updateGist(snoutDB);
   }
+  
+  // Handle scenario where both local and online have tasks
+  if (latestDateLocal && latestDateOnline) {
+    // Add online tasks not in local
+    for (const task of tasksOnline) {
+      const existsLocally = tasksLocal.some(localTask => localTask.uniqueId === task.uniqueId);
+      if (!existsLocally) {
+        await new Promise((resolve, reject) => {
+          const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+          const writeStore = writeTransaction.objectStore(snoutDB.storeName);
+          const request = writeStore.put(task);
+          request.onsuccess = resolve;
+          request.onerror = reject;
+        });
+      } else {
+        const localTask = tasksLocal.find(localTask => localTask.uniqueId === task.uniqueId);
+        if (localTask && new Date(localTask.dateAdded) < new Date(task.dateAdded)) {
+          await new Promise((resolve, reject) => {
+            const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+            const writeStore = writeTransaction.objectStore(snoutDB.storeName);
+            const request = writeStore.put(task);
+            request.onsuccess = resolve;
+            request.onerror = reject;
+          });
+        }
+      }
+    }
+    
+    // Add local tasks not in online
+    let onlineUpdated = false;
+    for (const task of tasksLocal) {
+      const existsOnline = tasksOnline.some(onlineTask => onlineTask.uniqueId === task.uniqueId);
+      if (!existsOnline) {
+        await new Promise((resolve, reject) => {
+          const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+          const writeStore = writeTransaction.objectStore(snoutDB.storeName);
+          const request = writeStore.put(task);
+          request.onsuccess = resolve;
+          request.onerror = reject;
+        });
+        onlineUpdated = true;
+      } else {
+        const onlineTask = tasksOnline.find(onlineTask => onlineTask.uniqueId === task.uniqueId);
+        if (onlineTask && new Date(onlineTask.dateAdded) < new Date(task.dateAdded)) {
+          onlineUpdated = true; // Mark for update
+        }
+      }
+    }
+    
+    if (onlineUpdated) {
+      await snoutApi.updateGist(snoutDB);
+    }
+  }
+  
   render();
+}
+
+function deleteDB() {
+  const request = indexedDB.deleteDatabase(snoutDB.dbName);
+
+  request.onsuccess = () => {
+    console.log(`Database ${snoutDB.dbName} deleted successfully.`);
+    snoutDB.db = {} as IDBDatabase;
+    render();
+  };
+
+  request.onerror = (event) => {
+    console.error("Error deleting database:", (event.target as IDBRequest).error);
+  };
+
+  request.onblocked = () => {
+    console.warn("Database deletion blocked. Close all open connections and try again.");
+  };
 }
 
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
 document.addEventListener('DOMContentLoaded', async () => {
+  if (false) deleteDB(); // For debug purposes
   initDB();
 
   // Init timout because DB takes time to load
   setTimeout(syncDB, 1000);
 
-  // Sync DB once every minute
-  setInterval(syncDB, 60000);
+  // Sync DB once 20 secs
+  setInterval(syncDB, 20000);
 });
