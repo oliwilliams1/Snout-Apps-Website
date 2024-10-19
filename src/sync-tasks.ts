@@ -27,17 +27,10 @@ function getCookie(name: string) {
   return null;
 }
 
-/*function deleteCookie(name: string) {
-  document.cookie = name + '=; Max-Age=-99999999;';
-}
-deleteCookie('snoutGithubToken');
-deleteCookie('snoutGistId');
-*/
-
 let octokit: Octokit | null = null;
 let gistId: string | null = null;
 
-async function fetchGistFile(gistId: string, fileName: string) {
+/*async function fetchGistFile(gistId: string, fileName: string) {
   if (!octokit) return;
 
   try {
@@ -59,7 +52,7 @@ async function fetchGistFile(gistId: string, fileName: string) {
   } catch (error) {
     console.error('Error fetching the gist:', error);
   }
-}
+}*/
 
 async function updateGistContent(gistId: string, fileName: string, newContent: string): Promise<void> {
   if (!octokit) return;
@@ -114,10 +107,24 @@ export function updateGist(snoutDB: SnoutDbData) {
   };
 }
 
+function deleteAllCookies() {
+  const cookies = document.cookie.split(";");
+
+  for (let cookie of cookies) {
+      const cookieName = cookie.split("=")[0].trim();
+      // Set the cookie's expiration date to the past
+      document.cookie = cookieName + "=; Max-Age=-99999999; path=/; Secure; SameSite=Strict";
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (false) deleteAllCookies(); // For testing purposes
+
   const api_key = getCookie('snoutGithubToken');
   const p_gistId = getCookie('snoutGistId');
   
+  console.log("API key:", api_key, "Gist ID:", p_gistId);
+
   if (!api_key || !p_gistId) {
     warningModal?.classList.remove('hidden');
     console.log("No API key found in cookies, asking user now");
