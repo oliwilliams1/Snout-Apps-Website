@@ -7,15 +7,14 @@
     "build:css-release": "tailwindcss -i ./src/styles.css -o ./src/output.css",
     "build:vite-release": "tsc && vite build",
     "tauri:build-release": "tauri build",
-
     "build": "build:css-release && build:vite-release && tauri build",
-
     "build:css": "tailwindcss -i ./src/styles.css -o ./src/output.css --watch",
     "build:vite": "tsc && vite build --watch",
     "tauri:dev": "tauri dev",
     "dev": "concurrently \"npm run build:vite\" \"npm run tauri:dev\" \"npm run build:css\""
   },
   "dependencies": {
+    "@octokit/core": "^6.1.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-shell": "^2",
     "lodash": "^4.17.21"

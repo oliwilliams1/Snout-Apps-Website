@@ -7,7 +7,7 @@ const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
 
-const snoutDB: snoutApi.snoutDbData = {
+const snoutDB: snoutApi.SnoutDbData = {
   dbName: "TodoDB",
   storeName: "tasks",
   db: {} as IDBDatabase
@@ -16,7 +16,6 @@ const snoutDB: snoutApi.snoutDbData = {
 function render() {
   renderTasks();
   renderPriorityGlance();
-  snoutApi.exportTasksToYAML(snoutDB);
 }
 
 function initDB() {
@@ -46,9 +45,10 @@ function addTask(task: snoutApi.Task) {
   transaction.oncomplete = () => {
     console.log("Task added");
     render();
+    snoutApi.updateGist(snoutDB);
   };
 
-  transaction.onerror = (event) => {
+  transaction.onerror = (event: any) => {
     console.error("Error adding task:", (event.target as IDBTransaction).error);
   };
 }
@@ -61,9 +61,10 @@ function deleteTask(taskName: string) {
 
   transaction.oncomplete = () => {
     render();
+    snoutApi.updateGist(snoutDB);
   };
 
-  transaction.onerror = (event) => {
+  transaction.onerror = (event: any) => {
     console.error("Error deleting task:", (event.target as IDBTransaction).error);
   };
 }
@@ -200,7 +201,8 @@ function addTaskButtonCallback() {
     title: mainInputBox.value,
     description: secondaryInputBox.value,
     priority: parseInt(priorityDropdown.value),
-    completed: false
+    completed: false,
+    dateAdded: new Date().toISOString()
   };
 
   addTask(task);

@@ -7,20 +7,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <title>Tauri App</title>
+
+    <!-- Scripts -->
     <script type="module" src="src/main.ts" defer></script>
     <script type="module" src="src/form-handler.ts" defer></script>
     <script type="module" src="src/day-handler.ts" defer></script>
+    <script type="module" src="src/sync-tasks.ts"></script>
   </head>
   <body class="bg-snout-base">
+    <!-- Warning Modal -->
+    <div id="warningModal" class="absolute hidden inset-0 backdrop-blur-sm z-10 flex items-center justify-center">
+      <div class="bg-snout-light rounded-lg shadow-lg p-6 max-w-md text-center">
+        <h2 class="text-3xl text-snout-base font-bold mb-4">Attention Required!</h2>
+        <p class="text-md text-gray-700 mb-6">
+          Your GitHub gist's or Github token is either out-of-date or not set. This will make this application unusable.
+        </p>
+        <p class="text-sm text-gray-500 mb-4">
+          Please enter your Gist ID and GitHub Token in the form below.
+        </p>
+        <div class="flex flex-col gap-4">
+          <input
+            type="text"
+            id="gistIdInput"
+            class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Gist ID"
+            aria-label="Gist ID"
+            required
+          />
+          <input
+            type="text"
+            id="tokenInput"
+            class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="GitHub Token"
+            aria-label="GitHub Token"
+            required
+          />
+          <button id="updateButton" class="bg-blue-500 hover:bg-blue-600 font-bold h-12 py-2 px-4 rounded-lg flex-shrink-0 text-snout-light transition duration-200 ease-in-out">
+            Update
+          </button>
+        </div>
+        <div class="mt-6">
+          <p class="text-sm text-gray-500">
+            Once set, click the "Update" button to save your data to the browser.
+          </p>
+          <p class="text-sm text-gray-500">
+            Your token is stored securely via cookies.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Navigation panel -->
     <div class="flex justify-center w-full h-8 mt-2">
       <div class="w-5 mr-auto ml-8 my-auto">
         <img src="src/assets/arrow.svg" alt="Back arrow">
       </div>
       <div class="flex justify-center items-center gap-4 text-snout-light">
-          <p id="tab-1">Overall</p>
-          <p>Day</p>
-          <p>Month</p>
+          <p id="tab-1">Today</p>
           <p>Calendar</p>
       </div>
       <div class="w-5 ml-auto mr-8 my-auto" style="transform: scale(-1, 1)">
@@ -67,6 +110,7 @@
       <div class="w-full h-1 bg-snout-deep rounded-full"></div>
     </div>
 
+    <!-- Non-priority tasks -->
     <div class="flex flex-col pl-5 pr-8 py-2 items-start" id="nonPriorityTaskContainer"></div>
   </body>
 </html>
