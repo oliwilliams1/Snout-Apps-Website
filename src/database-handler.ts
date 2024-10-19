@@ -14,6 +14,12 @@ const snoutDB: snoutApi.SnoutDbData = {
   db: {} as IDBDatabase
 };
 
+const deletedTasksDB: snoutApi.SnoutDbData = {
+  dbName: "DeletedTodoDB",
+  storeName: "deletedTasks",
+  db: {} as IDBDatabase
+}
+
 function render() {
   renderTasks();
   renderPriorityGlance();
@@ -37,6 +43,38 @@ function initDB() {
   };
 }
 
+function initDeletedTasksDB() {
+  const request = indexedDB.open(deletedTasksDB.dbName, 1);
+
+  request.onupgradeneeded = (event) => {
+    deletedTasksDB.db = (event.target as IDBOpenDBRequest).result;
+    deletedTasksDB.db.createObjectStore(deletedTasksDB.storeName, { keyPath: "id" });
+  };
+
+  request.onsuccess = (event) => {
+    deletedTasksDB.db = (event.target as IDBOpenDBRequest).result;
+  };
+
+  request.onerror = (event) => {
+    console.error("Database error:", (event.target as IDBOpenDBRequest).error);
+  };
+}
+
+function addDeletedTask(taskUniqueID: number) {
+  const transaction = deletedTasksDB.db.transaction([deletedTasksDB.storeName], "readwrite");
+  const store = transaction.objectStore(deletedTasksDB.storeName);
+  
+  store.put({ id: taskUniqueID });
+
+  transaction.oncomplete = () => {
+    console.log("Deleted task ID added:", taskUniqueID);
+  };
+
+  transaction.onerror = (event) => {
+    console.error("Error adding deleted task ID:", (event.target as IDBTransaction).error);
+  };
+}
+
 function addTask(task: snoutApi.Task) {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
   const store = transaction.objectStore(snoutDB.storeName);
@@ -46,8 +84,6 @@ function addTask(task: snoutApi.Task) {
   
   transaction.oncomplete = () => {
     console.log("Task added");
-    render();
-    snoutApi.updateGist(snoutDB);
   };
 
   transaction.onerror = (event: any) => {
@@ -63,6 +99,7 @@ function deleteTask(taskUniqueID: number) {
 
   transaction.oncomplete = () => {
     render();
+    addDeletedTask(taskUniqueID);
     snoutApi.updateGist(snoutDB);
   };
 
@@ -225,6 +262,8 @@ function addTaskButtonCallback() {
     };
 
     addTask(task);
+    render();
+    snoutApi.updateGist(snoutDB);
 
     additionalFields.classList.remove('show');
     mainInputBox.value = '';
@@ -270,77 +309,57 @@ async function syncDB() {
     }
   });
 
+  const deletedTasks: number[] = await new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error("Failed to fetch local task keys."));
+  })
+
+  const deletedTasksSet = new Set(deletedTasks);
+
+  // If both are empty, do not proceed
+  if (!latestDateLocal && !latestDateOnline) {
+    render();
+  };
+
   // Handle scenario where local is empty and online has tasks
   if (!latestDateLocal && latestDateOnline) {
-    await Promise.all(tasksOnline.map(task => {
-      return new Promise((resolve, reject) => {
-        const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
-        const writeStore = writeTransaction.objectStore(snoutDB.storeName);
-        const request = writeStore.put(task);
-        request.onsuccess = resolve;
-        request.onerror = reject;
-      });
-    }));
+    for (const task of tasksOnline) {
+      addTask(task);
+    }
+    render();
+    return;
   }
   
   // Handle scenario where online is empty and local has tasks
   if (latestDateLocal && !latestDateOnline) {
-    await snoutApi.updateGist(snoutDB);
+    snoutApi.updateGist(snoutDB);
+    return;
   }
   
-  // Handle scenario where both local and online have tasks
-  if (latestDateLocal && latestDateOnline) {
-    // Add online tasks not in local
-    for (const task of tasksOnline) {
-      const existsLocally = tasksLocal.some(localTask => localTask.uniqueId === task.uniqueId);
-      if (!existsLocally) {
-        await new Promise((resolve, reject) => {
-          const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
-          const writeStore = writeTransaction.objectStore(snoutDB.storeName);
-          const request = writeStore.put(task);
-          request.onsuccess = resolve;
-          request.onerror = reject;
-        });
+  // Both have tasks
+  for (const task of tasksOnline) {
+    const localTask = tasksLocal.find(taskLocal => taskLocal.uniqueId === task.uniqueId);
+  
+    if (localTask) {
+      if (deletedTasksSet.has(task.uniqueId)) {
+        try {
+          deleteTask(task.uniqueId);
+        } catch (error) {
+          console.error(`Failed to delete task ${task.uniqueId}:`, error);
+        }
       } else {
-        const localTask = tasksLocal.find(localTask => localTask.uniqueId === task.uniqueId);
-        if (localTask && new Date(localTask.dateAdded) < new Date(task.dateAdded)) {
-          await new Promise((resolve, reject) => {
-            const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
-            const writeStore = writeTransaction.objectStore(snoutDB.storeName);
-            const request = writeStore.put(task);
-            request.onsuccess = resolve;
-            request.onerror = reject;
-          });
+        if (JSON.stringify(localTask) !== JSON.stringify(task)) {
+          try {
+            addTask(task);
+          } catch (error) {
+            console.error(`Failed to add/update task ${task.uniqueId}:`, error);
+          }
         }
       }
     }
-    
-    // Add local tasks not in online
-    let onlineUpdated = false;
-    for (const task of tasksLocal) {
-      const existsOnline = tasksOnline.some(onlineTask => onlineTask.uniqueId === task.uniqueId);
-      if (!existsOnline) {
-        await new Promise((resolve, reject) => {
-          const writeTransaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
-          const writeStore = writeTransaction.objectStore(snoutDB.storeName);
-          const request = writeStore.put(task);
-          request.onsuccess = resolve;
-          request.onerror = reject;
-        });
-        onlineUpdated = true;
-      } else {
-        const onlineTask = tasksOnline.find(onlineTask => onlineTask.uniqueId === task.uniqueId);
-        if (onlineTask && new Date(onlineTask.dateAdded) < new Date(task.dateAdded)) {
-          onlineUpdated = true; // Mark for update
-        }
-      }
-    }
-    
-    if (onlineUpdated) {
-      await snoutApi.updateGist(snoutDB);
-    }
-  }
-  
+  } 
+
   render();
 }
 
@@ -366,6 +385,7 @@ addTaskButton?.addEventListener('click', addTaskButtonCallback);
 document.addEventListener('DOMContentLoaded', async () => {
   if (false) deleteDB(); // For debug purposes
   initDB();
+  initDeletedTasksDB();
 
   // Init timout because DB takes time to load
   setTimeout(syncDB, 1000);
