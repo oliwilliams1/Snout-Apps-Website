@@ -26,9 +26,13 @@ fn main() {
         .invoke_handler(tauri::generate_handler![set_window_position, close_window])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
-            main_window.set_title("My Tauri App")?;
+            main_window.set_title("Snout Apps")?;
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .run({
+            #[allow(unused_must_use)]
+            let context = tauri::generate_context!();
+            context
+        })
         .expect("error while running tauri application");
 }

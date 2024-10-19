@@ -206,8 +206,5 @@ function addTaskButtonCallback() {
   priorityDropdown.value = "-1";
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initDB();
-});
-
+document.addEventListener('DOMContentLoaded', initDB);
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
