@@ -149,11 +149,13 @@ function renderTasks() {
                 ${task.description ? `<h2 class="text-xs font-extralight text-snout-light">${task.description}</h2>` : ""}
               </div>
             </div>
-            <button id="delete-button-${task.title}">x</button>
-            <div class="flex gap-1 ml-auto mr-3">
-              <div class="w-1.5 h-1.5 rounded-full bg-snout-bright"></div>
-              <div class="w-1.5 h-1.5 rounded-full bg-snout-bright"></div>
-              <div class="w-1.5 h-1.5 rounded-full bg-snout-bright"></div>
+            <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.title}">
+              <div class="hidden absolute mt-20 w-16 rounded-lg" id="task-option-menu-${task.title}">
+                <button class="w-full h-8 rounded-lg bg-snout-deep text-snout-light" id="delete-button-${task.title}">x</button>
+              </div>
+              <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
+              <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
+              <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
             </div>
           </div><br>
         `;
@@ -169,6 +171,10 @@ function renderTasks() {
       nonPriorityTaskContainer.innerHTML = nonPriorityTaskContainerInnerHTML;
 
       for (const task of tasks) {
+        document.getElementById(`task-options-${task.title}`)?.addEventListener('click', function() {
+          document.getElementById(`task-option-menu-${task.title}`)?.classList.toggle('hidden');
+        })
+
         document.getElementById(`delete-button-${task.title}`)?.addEventListener('click', function() {
           deleteTask(task.title);
         });
