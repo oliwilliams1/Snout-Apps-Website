@@ -13,20 +13,22 @@
   </head>
   <body class="bg-snout-base">
     <!-- Navigation panel -->
-    <div class="flex justify-center w-full h-12">
-      <div class="w-10 mr-auto ml-8 p-2.5 my-auto">
+    <div class="flex justify-center w-full h-8 mt-2">
+      <div class="w-5 mr-auto ml-8 my-auto">
         <img src="src/assets/arrow.svg" alt="Back arrow">
       </div>
       <div class="flex justify-center items-center gap-4 text-snout-light">
-          <p>Overall</p>
+          <p id="tab-1">Overall</p>
           <p>Day</p>
           <p>Month</p>
           <p>Calendar</p>
       </div>
-      <div class="w-10 ml-auto mr-8 p-2.5 my-auto" style="transform: scale(-1, 1)">
+      <div class="w-5 ml-auto mr-8 my-auto" style="transform: scale(-1, 1)">
         <img src="src/assets/arrow.svg" alt="Forward arrow">
       </div>
     </div>
+
+    <div class="h-1.5 shadow-md rounded-b-full bg-snout-light mt-[-0.25rem]" id="segmentVisualiser"></div>
 
     <!-- Date and quick glance at task priority thing -->
     <div class="flex px-8 py-2">
@@ -53,7 +55,7 @@
             <option value="4">No Priority</option>
           </select>
         </form>
-        <button class="w-12 h-12 bg-snout-deep rounded-full flex-shrink-0" id="addTask">+</button>
+        <button class="w-12 h-12 bg-snout-deep rounded-full flex-shrink-0 text-snout-light" id="addTask">+</button>
       </div>
     </div>
 
