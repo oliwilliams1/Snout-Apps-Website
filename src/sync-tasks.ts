@@ -89,6 +89,7 @@ export interface SnoutDbData {
   dbName: string;
   storeName: string;
   db: IDBDatabase;
+  gistFilename: string;
 }
 
 export function updateGist(snoutDB: SnoutDbData) {
@@ -100,7 +101,7 @@ export function updateGist(snoutDB: SnoutDbData) {
     const tasks: Task[] = request.result;
     const yamlString = yaml.stringify(tasks);
     if (!gistId) return;
-    updateGistContent(gistId, 'todo.yaml', yamlString);
+    updateGistContent(gistId, snoutDB.gistFilename, yamlString);
   };
 
   request.onerror = (event) => {

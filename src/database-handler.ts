@@ -11,13 +11,15 @@ const priorityGlance = document.getElementById('priorityGlance');
 const snoutDB: snoutApi.SnoutDbData = {
   dbName: "TodoDB",
   storeName: "tasks",
-  db: {} as IDBDatabase
+  db: {} as IDBDatabase,
+  gistFilename: 'todo.yaml'
 };
 
 const deletedTasksDB: snoutApi.SnoutDbData = {
   dbName: "DeletedTodoDB",
   storeName: "deletedTasks",
-  db: {} as IDBDatabase
+  db: {} as IDBDatabase,
+  gistFilename: 'todo-deleted.yaml'
 }
 
 function render() {
@@ -100,6 +102,7 @@ function deleteTask(taskUniqueID: number) {
   transaction.oncomplete = () => {
     render();
     addDeletedTask(taskUniqueID);
+
     snoutApi.updateGist(snoutDB);
   };
 
@@ -286,84 +289,99 @@ async function syncDB() {
     request.onerror = () => reject(new Error("Failed to fetch local tasks."));
   });
 
-  let latestDateLocal: Date | null = null;
-  tasksLocal.forEach(task => {
+  const latestDateLocal: Date | null = tasksLocal.reduce<Date | null>((latest, task) => {
     const taskDate = new Date(task.dateAdded);
-    if (!latestDateLocal || taskDate > latestDateLocal) {
-      latestDateLocal = taskDate;
-    }
-  });
+    return !latest || taskDate > latest ? taskDate : latest;
+  }, null);
 
   const gistApiKey = snoutApi.getCookie('snoutGistId');
   if (!gistApiKey) return;
 
-  let latestDateOnline: Date | null = null;
-  const data: string | undefined = await snoutApi.fetchGistFile(gistApiKey, 'todo.yaml');
+  const data: string | undefined = await snoutApi.fetchGistFile(gistApiKey, snoutDB.gistFilename);
   if (!data) return;
 
   const tasksOnline: snoutApi.Task[] = yaml.parse(data);
-  tasksOnline.forEach(task => {
+  
+  const latestDateOnline: Date | null = tasksOnline.reduce<Date | null>((latest, task) => {
     const taskDate = new Date(task.dateAdded);
-    if (!latestDateOnline || taskDate > latestDateOnline) {
-      latestDateOnline = taskDate;
+    return !latest || taskDate > latest ? taskDate : latest;
+  }, null);
+
+  const deletedTasksData: string | undefined = await snoutApi.fetchGistFile(gistApiKey, deletedTasksDB.gistFilename);
+  if (!deletedTasksData) return;
+
+  const deletedTasksOnline = yaml.parse(deletedTasksData);
+  const deletedTasksSet = new Set(deletedTasksOnline);
+
+  let deletedListUpdated = false;
+  for (const deletedTaskId of deletedTasksData) {
+    if (!deletedTasksSet.has(Number(deletedTaskId))) {
+      deletedTasksSet.add(Number(deletedTaskId));
+      deletedListUpdated = true;
     }
-  });
+  }
 
-  const deletedTasks: number[] = await new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(new Error("Failed to fetch local task keys."));
-  })
+  if (deletedListUpdated) {
+    await snoutApi.updateGist(deletedTasksDB);
+  }
 
-  const deletedTasksSet = new Set(deletedTasks);
-
-  // If both are empty, do not proceed
   if (!latestDateLocal && !latestDateOnline) {
     render();
-  };
+    return;
+  }
 
-  // Handle scenario where local is empty and online has tasks
   if (!latestDateLocal && latestDateOnline) {
     for (const task of tasksOnline) {
-      addTask(task);
+      await addTask(task); // Ensure error handling here as well
     }
     render();
     return;
   }
-  
-  // Handle scenario where online is empty and local has tasks
+
   if (latestDateLocal && !latestDateOnline) {
-    snoutApi.updateGist(snoutDB);
+    await snoutApi.updateGist(snoutDB);
     return;
   }
-  
-  // Both have tasks
+
   for (const task of tasksOnline) {
     const localTask = tasksLocal.find(taskLocal => taskLocal.uniqueId === task.uniqueId);
-  
+
     if (localTask) {
       if (deletedTasksSet.has(task.uniqueId)) {
         try {
-          deleteTask(task.uniqueId);
+          await deleteTask(task.uniqueId);
         } catch (error) {
           console.error(`Failed to delete task ${task.uniqueId}:`, error);
         }
       } else {
         if (JSON.stringify(localTask) !== JSON.stringify(task)) {
           try {
-            addTask(task);
+            await addTask(task);
           } catch (error) {
             console.error(`Failed to add/update task ${task.uniqueId}:`, error);
           }
         }
       }
     }
-  } 
+  }
+
+  let onlineNeedToUpdate = false;
+  // Sync local tasks that are not online
+  for (const localTask of tasksLocal) {
+    if (!tasksOnline.find(task => task.uniqueId === localTask.uniqueId)) {
+      onlineNeedToUpdate = true;
+      break;
+    }
+  }
+
+  if (onlineNeedToUpdate) {
+    snoutApi.updateGist(snoutDB)
+  }
 
   render();
 }
 
-function deleteDB() {
+function deleteMainDB() {
   const request = indexedDB.deleteDatabase(snoutDB.dbName);
 
   request.onsuccess = () => {
@@ -381,9 +399,31 @@ function deleteDB() {
   };
 }
 
+function deleteSecondaryDB() {
+  const request = indexedDB.deleteDatabase(deletedTasksDB.dbName);
+
+  request.onsuccess = () => {
+    console.log(`Database ${deletedTasksDB.dbName} deleted successfully.`);
+    deletedTasksDB.db = {} as IDBDatabase;
+    render();
+  };
+
+  request.onerror = (event) => {
+    console.error("Error deleting database:", (event.target as IDBRequest).error);
+  }
+  request.onblocked = () => {
+    console.warn("Database deletion blocked. Close all open connections and try again.");
+  }
+}
+
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
 document.addEventListener('DOMContentLoaded', async () => {
-  if (false) deleteDB(); // For debug purposes
+  // For debug purposes
+  if (false) {
+    deleteMainDB();
+    deleteSecondaryDB();
+  }
+
   initDB();
   initDeletedTasksDB();
 
