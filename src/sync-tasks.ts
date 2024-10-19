@@ -16,7 +16,7 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = name + "=" + (value || "") + expires + "; path=/; Secure; SameSite=Strict";
 }
 
-function getCookie(name: string) {
+export function getCookie(name: string) {
   const nameEQ = name + "=";
   const ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
@@ -30,7 +30,7 @@ function getCookie(name: string) {
 let octokit: Octokit | null = null;
 let gistId: string | null = null;
 
-/*async function fetchGistFile(gistId: string, fileName: string) {
+export async function fetchGistFile(gistId: string, fileName: string) {
   if (!octokit) return;
 
   try {
@@ -52,7 +52,7 @@ let gistId: string | null = null;
   } catch (error) {
     console.error('Error fetching the gist:', error);
   }
-}*/
+}
 
 async function updateGistContent(gistId: string, fileName: string, newContent: string): Promise<void> {
   if (!octokit) return;

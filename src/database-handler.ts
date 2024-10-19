@@ -1,3 +1,4 @@
+import yaml from 'yaml';
 import * as snoutApi from './sync-tasks';
 
 const mainInputBox = document.getElementById("mainInput") as HTMLInputElement;
@@ -212,5 +213,74 @@ function addTaskButtonCallback() {
   priorityDropdown.value = "-1";
 }
 
-document.addEventListener('DOMContentLoaded', initDB);
+async function syncDB() {
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
+  const store = transaction.objectStore(snoutDB.storeName);
+  
+  const tasksLocal: snoutApi.Task[] = await new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error("Failed to fetch local tasks."));
+  });
+
+  let latestDateLocal: Date | null = null;
+  tasksLocal.forEach(task => {
+    const taskDate = new Date(task.dateAdded);
+    if (!latestDateLocal || taskDate > latestDateLocal) {
+      latestDateLocal = taskDate;
+    }
+  });
+
+  const gistApiKey = snoutApi.getCookie('snoutGistId');
+  if (!gistApiKey) return;
+
+  let latestDateOnline: Date | null = null;
+  const data: string | undefined = await snoutApi.fetchGistFile(gistApiKey, 'todo.yaml');
+  if (!data) return;
+
+  const tasksOnline: snoutApi.Task[] = yaml.parse(data);
+  tasksOnline.forEach(task => {
+    const taskDate = new Date(task.dateAdded);
+    if (!latestDateOnline || taskDate > latestDateOnline) {
+      latestDateOnline = taskDate;
+    }
+  });
+
+  // Synchronization Logic
+  if (!latestDateLocal && latestDateOnline) {
+    // No local tasks, add all online tasks
+    console.log("No local tasks, setting online tasks...");
+    tasksOnline.forEach(task => addTask(task));
+  } else if (latestDateLocal && latestDateOnline) {
+    if (latestDateLocal > latestDateOnline) {
+      // Local tasks are newer, update Gist
+      console.log("Local tasks are newer, syncing Gist...");
+      await snoutApi.updateGist(snoutDB);
+    } else {
+      // Online tasks are newer, fetch and add them
+      console.log("Online tasks are newer, setting local tasks...");
+      tasksOnline.forEach(task => {
+        const existingTask = tasksLocal.find(t => t.title === task.title);
+        if (!existingTask) {
+          addTask(task);
+        }
+      });
+    }
+  } else if (latestDateLocal && !latestDateOnline) {
+    // If online tasks are not present, update Gist
+    console.log("No online tasks, syncing Gist...");
+    await snoutApi.updateGist(snoutDB);
+  }
+  render();
+}
+
 addTaskButton?.addEventListener('click', addTaskButtonCallback);
+document.addEventListener('DOMContentLoaded', async () => {
+  initDB();
+
+  // Init timout because DB takes time to load
+  setTimeout(syncDB, 1000);
+
+  // Sync DB once every minute
+  setInterval(syncDB, 60000);
+});
