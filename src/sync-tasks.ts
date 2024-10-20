@@ -6,6 +6,25 @@ const gistIdInput = document.getElementById('gistIdInput') as HTMLInputElement;
 const tokenInput = document.getElementById('tokenInput') as HTMLInputElement;
 const updateButton = document.getElementById('updateButton');
 
+export interface Task {
+  title: string;
+  description: string;
+  priority: number;
+  completed: boolean;
+  dateAdded: string;
+  uniqueId: number;
+}
+
+export interface SnoutDbData {
+  dbName: string;
+  storeName: string;
+  db: IDBDatabase;
+  gistFilename: string;
+}
+
+let octokit: Octokit | null = null;
+export let gistId: string | null = null;
+
 function setCookie(name: string, value: string, days: number) {
   let expires = "";
   if (days) {
@@ -27,9 +46,6 @@ export function getCookie(name: string) {
   return null;
 }
 
-let octokit: Octokit | null = null;
-let gistId: string | null = null;
-
 export async function fetchGistFile(gistId: string, fileName: string) {
   if (!octokit) return;
 
@@ -47,14 +63,14 @@ export async function fetchGistFile(gistId: string, fileName: string) {
       const file = files[fileName];
       return file.content;
     } else {
-      console.log(`File "${fileName}" not found in the gist.`);
+      console.warn(`File "${fileName}" not found in the gist.`);
     }
   } catch (error) {
     console.error('Error fetching the gist:', error);
   }
 }
 
-async function updateGistContent(gistId: string, fileName: string, newContent: string): Promise<void> {
+export async function updateGistContent(gistId: string, fileName: string, newContent: string): Promise<void> {
   if (!octokit) return;
 
   try {
@@ -70,29 +86,13 @@ async function updateGistContent(gistId: string, fileName: string, newContent: s
       }
     });
 
-    console.log(`Gist updated successfully. Gist URL: ${response.data.html_url}`);
+    console.log(`Gist updated successfully. Gist URL: ${response.data.html_url}\nFile: ${fileName}`);
   } catch (error) {
     console.error('Error updating the gist:', error);
   }
 }
 
-export interface Task {
-  title: string;
-  description: string;
-  priority: number;
-  completed: boolean;
-  dateAdded: string;
-  uniqueId: number;
-}
-
-export interface SnoutDbData {
-  dbName: string;
-  storeName: string;
-  db: IDBDatabase;
-  gistFilename: string;
-}
-
-export function updateGist(snoutDB: SnoutDbData) {
+export async function updateGist(snoutDB: SnoutDbData) {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
   const store = transaction.objectStore(snoutDB.storeName);
   const request = store.getAll();

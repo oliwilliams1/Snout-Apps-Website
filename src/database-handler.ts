@@ -22,6 +22,8 @@ const deletedTasksDB: snoutApi.SnoutDbData = {
   gistFilename: 'todo-deleted.yaml'
 }
 
+let readyToSync = true;
+
 function render() {
   renderTasks();
   renderPriorityGlance();
@@ -66,7 +68,7 @@ function addDeletedTaskID(taskUniqueID: number) {
   const transaction = deletedTasksDB.db.transaction([deletedTasksDB.storeName], "readwrite");
   const store = transaction.objectStore(deletedTasksDB.storeName);
   
-  store.add(taskUniqueID);
+  store.put({ id: taskUniqueID });
 
   transaction.oncomplete = () => {
     console.log("Deleted task ID added:", taskUniqueID);
@@ -108,7 +110,6 @@ async function addTask(task: snoutApi.Task) {
   });
 
   const deletedTasksSet = new Set(deletedTasksLocal);
-  console.log("Deleted tasks set:", deletedTasksSet);
   
   const maxUniqueIdDeletedDB = maxSet(deletedTasksSet);
   const maxUniqueIdLocalDB = await maxUniqueID_DB();
@@ -129,10 +130,11 @@ async function addTask(task: snoutApi.Task) {
   store.put(task);
 
   transaction.oncomplete = () => {
-    console.log("Task added");
-    console.log(task);
+    console.log("Task added\n", "Task: ", task);
     render();
+    readyToSync = false;
     snoutApi.updateGist(snoutDB);
+    delay(1000).then(() => readyToSync = true);
   };
 
   transaction.onerror = (event) => {
@@ -140,20 +142,25 @@ async function addTask(task: snoutApi.Task) {
   };
 }
 
-function deleteTask(taskUniqueID: number) {
+async function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function deleteTask(taskUniqueID: number) {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
   const store = transaction.objectStore(snoutDB.storeName);
 
   store.delete(taskUniqueID);
 
-  transaction.oncomplete = () => {
-    render();
+  render();
+  transaction.oncomplete = async () => {
     addDeletedTaskID(taskUniqueID);
+    
+    await snoutApi.updateGist(deletedTasksDB);
 
-    snoutApi.updateGist(deletedTasksDB);
+    await delay(1000);
 
-    console.log("Task deleted:", taskUniqueID);
-    snoutApi.updateGist(snoutDB);
+    await snoutApi.updateGist(snoutDB);
   };
 
   transaction.onerror = (event: any) => {
@@ -348,7 +355,7 @@ async function getPrimaryDB() : Promise<snoutApi.Task[]> {
   });
 }
 
-async function getSecondaryDB() : Promise<number[]> {
+async function getSecondaryDB() {
   const transaction = deletedTasksDB.db.transaction(deletedTasksDB.storeName, "readonly");
   const store = transaction.objectStore(deletedTasksDB.storeName);
   const request = store.getAll();
@@ -360,36 +367,30 @@ async function getSecondaryDB() : Promise<number[]> {
 }
 
 async function syncDeletedIDs (deletedIDsLocal: number[], deletedIDsOnline: number[]) : Promise<number[]> {
-  const deletedIDsLocalSet = new Set(deletedIDsLocal);
-  let overallChanges = false;
+  let needsUpdate = false;
 
-  console.log(deletedIDsLocalSet);
-  // Check for tasks to add to local database
   for (const onlineID of deletedIDsOnline) {
-    if (deletedIDsLocalSet.has(onlineID)) {
-      console.log(`Adding ${onlineID} to local database`);
-      addDeletedTaskID(onlineID);
-      overallChanges = true;
+    if (!deletedIDsLocal.includes(onlineID)) {
+      deleteTask(onlineID);
     }
   }
 
-  // Check for tasks to delete from online
-  let onlineNeedsToSync = false;
   for (const localID of deletedIDsLocal) {
     if (!deletedIDsOnline.includes(localID)) {
-      onlineNeedsToSync = true;
-      overallChanges = true;
-      break;
+      needsUpdate = true;
     }
   }
 
-  if (onlineNeedsToSync) {
-    console.log("Syncing deleted tasks online");
+  if (needsUpdate) {
     snoutApi.updateGist(deletedTasksDB);
-  }
 
-  if (overallChanges) {
-    return await getSecondaryDB();
+    const secondaryDB : any = await getSecondaryDB();
+    let deletedIDsLocalArray : number[] = [];
+
+    for (const deletedID of secondaryDB) {
+      deletedIDsLocalArray.push(deletedID.id);
+    }
+    return deletedIDsLocalArray;
   } else {
     return deletedIDsLocal;
   }
@@ -424,8 +425,9 @@ async function syncTasks(tasksOnline: snoutApi.Task[], tasksLocal: snoutApi.Task
   }
 }
 
-
 async function sync() {
+  readyToSync = false;
+
   const gistApiKey = snoutApi.getCookie('snoutGistId');
   if (!gistApiKey) return;
 
@@ -435,19 +437,41 @@ async function sync() {
   const taskDataPnline : string | undefined = await snoutApi.fetchGistFile(gistApiKey, snoutDB.gistFilename);
   if (!taskDataPnline) return;
 
-  const deletedIDsOnline : number[] = yaml.parse(deletedTasksData);
-  const deletedIDsLocal : number[] = await getSecondaryDB();
+  const deletedIDsOnline = yaml.parse(deletedTasksData);
+  const deletedIDsLocal : any = await getSecondaryDB();
+
+  let deletedIDsOnlineArray : number[] = [];
+
+  for (const deletedID of deletedIDsOnline) {
+    deletedIDsOnlineArray.push(deletedID.id);
+  }
+
+  let deletedIDsLocalArray : number[] = [];
+
+  for (const deletedID of deletedIDsLocal) {
+    deletedIDsLocalArray.push(deletedID.id);
+  }
 
   const tasksOnline: snoutApi.Task[] = yaml.parse(taskDataPnline);
   const primaryDB : snoutApi.Task[] = await getPrimaryDB();
 
-  const deletedIDs = await syncDeletedIDs(deletedIDsLocal, deletedIDsOnline);
+  const deletedIDs = await syncDeletedIDs(deletedIDsLocalArray, deletedIDsOnlineArray);
 
   await syncTasks(tasksOnline, primaryDB, deletedIDs);
 
   render();
 
-  console.log("Max unique ID:", maxUniqueID_DB());
+  delay(1000).then(() => readyToSync = true);
+}
+
+async function clearGistData() {
+  if (!snoutApi.gistId) {
+    console.warn("Error clearning gist data: Gist ID not found.");
+    return;
+  }
+  await snoutApi.updateGistContent(snoutApi.gistId, deletedTasksDB.gistFilename, '[]');
+  await delay(1000);
+  await snoutApi.updateGistContent(snoutApi.gistId, snoutDB.gistFilename, '[]');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -455,6 +479,15 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn("Debug mode: deleting all databases");
     deleteMainDB();
     deleteSecondaryDB();
+    console.log("Application quitted, all databases deleted");
+    return;
+  }
+
+  if (false) {
+    console.warn("Debug mode: deleting all databases");
+    clearGistData();
+    console.log("Application quitted, all databases cleared");
+    return;
   }
 
   initPrimaryDB();
@@ -470,5 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setTimeout(sync, 1000);
 
-  setInterval(sync, 30000);
+  setInterval(() => {
+    if (readyToSync) sync(); else console.log("Sync is not ready yet, waiting for next iteration...");
+  }, 60000);
 });
