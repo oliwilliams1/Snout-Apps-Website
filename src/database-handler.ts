@@ -168,6 +168,55 @@ async function deleteTask(taskUniqueID: number) {
   };
 }
 
+async function updateTask(updatedTask: snoutApi.Task) {
+  const transaction = snoutDB.db.transaction([snoutDB.storeName], "readwrite");
+  const store = transaction.objectStore(snoutDB.storeName);
+  
+  const existingTaskRequest = store.get(updatedTask.uniqueId);
+
+  existingTaskRequest.onsuccess = async (event) => {
+    const target = event.target as IDBRequest;
+    const existingTask = target.result;
+
+      if (!existingTask) {
+          console.error("Task not found for update:", updatedTask.uniqueId);
+          return;
+      }
+
+      console.log("Update Task:", updatedTask);
+      console.log("Existing Task:", existingTask);
+      
+      const dateOfLocalDB = new Date(existingTask.dateAdded);
+      const dateOfUpdatedTask = new Date(updatedTask.dateAdded);
+
+      const newTask = dateOfLocalDB.getTime() > dateOfUpdatedTask.getTime() ? updatedTask : existingTask;
+
+      const updateRequest = store.put(newTask);
+
+      console.log("Local Date:", dateOfLocalDB);
+      console.log("Updated Date:", dateOfUpdatedTask);
+      console.log("Choosing Task:", newTask);
+
+      updateRequest.onsuccess = async () => {
+          console.log("Task updated\n", "Updated Task: ", newTask);
+          render();
+          readyToSync = false;
+          await snoutApi.updateGist(snoutDB);
+          
+          await delay(1000);
+          readyToSync = true;
+      };
+
+      updateRequest.onerror = (event) => {
+          console.error("Error updating task:", (event.target as IDBRequest).error);
+      };
+  };
+
+  existingTaskRequest.onerror = (event) => {
+      console.error("Error fetching existing task:", (event.target as IDBRequest).error);
+  };
+}
+
 function renderPriorityGlance() {
   if (priorityGlance === null) return;
 
@@ -419,6 +468,15 @@ async function syncTasks(tasksOnline: snoutApi.Task[], tasksLocal: snoutApi.Task
     }
   }
 
+  for (const localTask of tasksLocal) {
+    const onlineTask = tasksOnline.find(task => task.uniqueId === localTask.uniqueId);
+    if (onlineTask && JSON.stringify(localTask) !== JSON.stringify(onlineTask)) {
+      console.log(`Updating task with ID ${localTask.uniqueId} in database`);
+      await updateTask(onlineTask);
+      overallChanges = true;
+    }
+  }
+
   if (overallChanges) {
     console.log("Syncing tasks online");
     await snoutApi.updateGist(snoutDB);
@@ -434,8 +492,8 @@ async function sync() {
   const deletedTasksData : string | undefined = await snoutApi.fetchGistFile(gistApiKey, deletedTasksDB.gistFilename);
   if (!deletedTasksData) return;
 
-  const taskDataPnline : string | undefined = await snoutApi.fetchGistFile(gistApiKey, snoutDB.gistFilename);
-  if (!taskDataPnline) return;
+  const taskDataOnline : string | undefined = await snoutApi.fetchGistFile(gistApiKey, snoutDB.gistFilename);
+  if (!taskDataOnline) return;
 
   const deletedIDsOnline = yaml.parse(deletedTasksData);
   const deletedIDsLocal : any = await getSecondaryDB();
@@ -452,7 +510,7 @@ async function sync() {
     deletedIDsLocalArray.push(deletedID.id);
   }
 
-  const tasksOnline: snoutApi.Task[] = yaml.parse(taskDataPnline);
+  const tasksOnline: snoutApi.Task[] = yaml.parse(taskDataOnline);
   const primaryDB : snoutApi.Task[] = await getPrimaryDB();
 
   const deletedIDs = await syncDeletedIDs(deletedIDsLocalArray, deletedIDsOnlineArray);
