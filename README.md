@@ -36,3 +36,11 @@ Once you create your Gist, copy it's unique ID in the url and paste it into the 
 Then you need an unique API key to ensure only you can accssess your data. To do this, go to your GitHub profile > Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token.
 
 On this page you should fill in the form as usual, but under Permissions > Account permissions > Gists, choose Access: Read & write. Generate your token and place it into GitHub token in this app. When your done press the update button and this program will be ready-to-go!
+
+# Features to add
+### TODO app:
+- Visual indicator for done tasks
+- Indicator for if local data has been synced or not
+- Sync button
+- Task due date
+- Additional data for tasks (bring up modal to put text it)
