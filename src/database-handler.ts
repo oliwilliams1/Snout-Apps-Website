@@ -14,6 +14,8 @@ const syncButton = document.getElementById('syncButton');
 const calendarSelectModal = document.getElementById('calendarSelectModal');
 const selectDateButton = document.getElementById('selectDateButton');
 const calandarModalSelectDateButton = document.getElementById('calandarModalSelectDateButton');
+const calendarCloseButton = document.getElementById('calendarCloseButton');
+const taskViewerModal = document.getElementById('taskViewerModal');
 
 let taskUpdating : boolean = false;
 let taskUpdatingId : number = -1;
@@ -297,13 +299,13 @@ function renderTasks() {
             <div class="rounded-full ${priorityColour} w-1 h-10"></div>
             <div class="flex flex-row items-center ml-4">
               <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded" id="task-checkbox-${task.uniqueId}">
-              <div class="w-[21rem]">
-                <h1 class="text-lg font-semibold text-snout-bright">
+              <div class="w-[21rem]" id="task-container-${task.uniqueId}">
+                <h1 class="text-lg font-semibold max-w-80 text-snout-bright truncate">
                   ${task.completed ? "<s>" + task.title + "</s>" : task.title}
                 </h1>
                 <div class="flex items-center">
                   ${task.description ? `
-                    <h2 class="text-xs font-extralight text-snout-bright mr-2">
+                    <h2 class="text-xs max-w-48 font-extralight truncate text-snout-bright mr-2">
                       ${task.completed ? "<s>" + task.description + "</s>" : task.description}
                     </h2>` : ""}
                   ${task.dateDueBool ? `
@@ -348,6 +350,26 @@ function renderTasks() {
         document.getElementById(`delete-button-${task.uniqueId}`)?.addEventListener('click', function() {
           deleteTask(task.uniqueId);
         });
+
+        document.getElementById(`task-container-${task.uniqueId}`)?.addEventListener('click', function() {
+          console.log("Task clicked: ", task)
+          if (!taskViewerModal) return;
+          taskViewerModal.classList.remove('hidden');
+          taskViewerModal.innerHTML = `
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <button id="task-viewer-modal-delete-button" class="absolute top-4 right-4 w-8 h-8 rounded-full text-white bg-red-500 hover:bg-red-600 transition duration-200">&times;</button>
+            <div class="flex items-center justify-between mb-4">
+              <h1 class="text-xl font-semibold text-gray-800 max-w-72">${task.title}</h1>
+              <h2 class="text-sm font-light text-gray-600">${task.dateDueBool ? dateStrToFormattedDate(task.dateDue) : ""}</h2>
+            </div>
+            <h2 class="text-md font-medium text-gray-800 mb-2">Due: ${task.description}</h2>
+            <p class="text-gray-700">Additional info example</p>
+          </div>`;
+          const closeModalButton = document.getElementById('task-viewer-modal-delete-button');
+          closeModalButton?.addEventListener('click', function() {
+            taskViewerModal.classList.add('hidden');
+          })
+        })
 
         const checkbox = document.getElementById(`task-checkbox-${task.uniqueId}`) as HTMLInputElement | null;
         checkbox?.addEventListener('change', function() {
@@ -646,6 +668,8 @@ document.addEventListener('DOMContentLoaded', () => {
   selectDateButton?.addEventListener('click', selectDateButtonCallback);
 
   calandarModalSelectDateButton?.addEventListener('click', () => {setSelectedDateCallback(calendarInstance)});
+  
+  calendarCloseButton?.addEventListener('click', () => {calendarSelectModal?.classList.add('hidden');})
   setTimeout(sync, 1000);
 
   setInterval(() => {
