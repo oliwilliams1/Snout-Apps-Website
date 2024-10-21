@@ -1,3 +1,5 @@
+import Calendar from "color-calendar";
+import "color-calendar/dist/css/theme-basic.css";
 import yaml from 'yaml';
 import * as snoutApi from './sync-tasks';
 
@@ -9,9 +11,14 @@ const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
 const syncBar = document.getElementById('syncBar');
 const syncButton = document.getElementById('syncButton');
+const calendarSelectModal = document.getElementById('calendarSelectModal');
+const selectDateButton = document.getElementById('selectDateButton');
+const calandarModalSelectDateButton = document.getElementById('calandarModalSelectDateButton');
 
 let taskUpdating : boolean = false;
 let taskUpdatingId : number = -1;
+let selectedDate : Date | null = null;
+let readyToSync : boolean = true;
 
 const snoutDB: snoutApi.SnoutDbData = {
   dbName: "TodoDB",
@@ -26,8 +33,6 @@ const deletedTasksDB: snoutApi.SnoutDbData = {
   db: {} as IDBDatabase,
   gistFilename: 'todo-deleted.yaml'
 }
-
-let readyToSync = true;
 
 function render() {
   renderTasks();
@@ -353,12 +358,16 @@ function addTaskButtonCallback() {
     return;
   }
 
+  const date = new Date().toISOString();
+
   const task: snoutApi.Task = {
     title: mainInputBox.value,
     description: secondaryInputBox.value,
     priority: parseInt(priorityDropdown.value),
     completed: false,
-    dateAdded: new Date().toISOString(),
+    dateDueBool: (selectedDate != null),
+    dateDue: (selectedDate != null) ? selectedDate.toISOString() : date,
+    dateAdded: date,
     uniqueId: -1
   };
 
@@ -392,6 +401,22 @@ function updateTaskButtonCallback(task : snoutApi.Task) {
   mainInputBox.value = task.title;
   secondaryInputBox.value = task.description;
   priorityDropdown.value = task.priority.toString();
+}
+
+function selectDateButtonCallback() {
+  calendarSelectModal?.classList.remove('hidden');
+}
+
+function setSelectedDateCallback(calendarInstance : Calendar) {
+  const p_selectedDate = calendarInstance?.getSelectedDate();
+  if (p_selectedDate) {
+    console.log("Date selected: ", p_selectedDate);
+    selectedDate = p_selectedDate;
+    if (selectDateButton) {
+      selectDateButton.innerHTML = "Selected Date: " + selectedDate.toISOString().split('T')[0];
+    }
+    calendarSelectModal?.classList.add('hidden');
+  }
 }
 
 function deleteMainDB() {
@@ -597,11 +622,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const calendarInstance = new Calendar();
+
   syncButton?.addEventListener('click', sync);
 
   addTaskButton?.addEventListener('click', addTaskButtonCallback);
 
-  setTimeout(sync, 1000);
+  selectDateButton?.addEventListener('click', selectDateButtonCallback);
+
+  calandarModalSelectDateButton?.addEventListener('click', () => {setSelectedDateCallback(calendarInstance)});
+  // setTimeout(sync, 1000);
 
   setInterval(() => {
     if (readyToSync) sync(); else console.log("Sync is not ready yet, waiting for next iteration...");

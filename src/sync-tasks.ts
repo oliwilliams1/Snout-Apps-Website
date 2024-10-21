@@ -12,6 +12,8 @@ export interface Task {
   priority: number;
   completed: boolean;
   dateAdded: string;
+  dateDueBool: boolean;
+  dateDue: string;
   uniqueId: number;
 }
 
