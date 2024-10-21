@@ -7,6 +7,7 @@ const priorityDropdown = document.getElementById("priorityList") as HTMLSelectEl
 const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
+const syncBar = document.getElementById('sync-bar');
 
 let taskUpdating : boolean = false;
 let taskUpdatingId : number = -1;
@@ -132,11 +133,11 @@ async function addTask(task: snoutApi.Task) {
 
   store.put(task);
 
-  transaction.oncomplete = () => {
+  transaction.oncomplete = async () => {
     console.log("Task added\n", "Task: ", task);
     render();
     readyToSync = false;
-    snoutApi.updateGist(snoutDB);
+    await snoutApi.updateGist(snoutDB);
     delay(1000).then(() => readyToSync = true);
   };
 
@@ -287,8 +288,8 @@ function renderTasks() {
             <div class="flex flex-row items-center ml-4">
               <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded" id="task-checkbox-${task.uniqueId}">
               <div>
-                <h1 class="text-lg font-semibold text-snout-bright">${task.title}</h1>
-                ${task.description ? `<h2 class="text-xs font-extralight text-snout-light">${task.description}</h2>` : ""}
+                <h1 class="text-lg font-semibold text-snout-bright">${task.completed ? "<s>" + task.title + "</s>" : task.title}</h1>
+                ${task.description ? `<h2 class="text-xs font-extralight text-snout-bright">${task.completed ? "<s>" + task.description + "</s>" : task.description}</h2>` : ""}
               </div>
             </div>
             <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.uniqueId}">
@@ -465,7 +466,7 @@ async function syncDeletedIDs (deletedIDsLocal: number[], deletedIDsOnline: numb
   }
 
   if (needsUpdate) {
-    snoutApi.updateGist(deletedTasksDB);
+    await snoutApi.updateGist(deletedTasksDB);
 
     const secondaryDB : any = await getSecondaryDB();
     let deletedIDsLocalArray : number[] = [];
@@ -518,6 +519,7 @@ async function syncTasks(tasksOnline: snoutApi.Task[], tasksLocal: snoutApi.Task
 }
 
 async function sync() {
+  syncBar?.classList.remove('hidden');
   readyToSync = false;
 
   const gistApiKey = snoutApi.getCookie('snoutGistId');
@@ -551,9 +553,12 @@ async function sync() {
 
   await syncTasks(tasksOnline, primaryDB, deletedIDs);
 
-  render();
+  await render();
 
-  delay(1000).then(() => readyToSync = true);
+  delay(1000).then(() => {
+    readyToSync = true;
+    syncBar?.classList.add('hidden');
+  });
 }
 
 async function clearGistData() {

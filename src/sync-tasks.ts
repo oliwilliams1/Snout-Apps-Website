@@ -97,11 +97,11 @@ export async function updateGist(snoutDB: SnoutDbData) {
   const store = transaction.objectStore(snoutDB.storeName);
   const request = store.getAll();
 
-  request.onsuccess = () => {
+  request.onsuccess = async () => {
     const tasks: Task[] = request.result;
     const yamlString = yaml.stringify(tasks);
     if (!gistId) return;
-    updateGistContent(gistId, snoutDB.gistFilename, yamlString);
+    await updateGistContent(gistId, snoutDB.gistFilename, yamlString);
   };
 
   request.onerror = (event) => {

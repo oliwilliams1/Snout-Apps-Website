@@ -26,7 +26,7 @@ npm run build
 Now an setup executable should be ready
 
 # Using the program
-<img src=".media/img_0.jpeg" alt="Description" width="200" />
+<img src=".media/img_0.jpeg" alt="Description" width="300" />
 
 On first startup you will be prompted with a message requiring you to set some credentials that function as the backend for this program.
 To get your github gist id, go to [Github Gists](https://gist.github.com) and create a gist named ```todo.yaml```.
