@@ -182,27 +182,19 @@ async function updateTask(updatedTask: snoutApi.Task) {
           console.error("Task not found for update:", updatedTask.uniqueId);
           return;
       }
-
-      console.log("Update Task:", updatedTask);
-      console.log("Existing Task:", existingTask);
       
       const dateOfLocalDB = new Date(existingTask.dateAdded);
       const dateOfUpdatedTask = new Date(updatedTask.dateAdded);
 
-      const newTask = dateOfLocalDB.getTime() > dateOfUpdatedTask.getTime() ? updatedTask : existingTask;
+      const newTask = dateOfLocalDB.getTime() < dateOfUpdatedTask.getTime() ? updatedTask : existingTask;
 
       const updateRequest = store.put(newTask);
-
-      console.log("Local Date:", dateOfLocalDB);
-      console.log("Updated Date:", dateOfUpdatedTask);
-      console.log("Choosing Task:", newTask);
 
       updateRequest.onsuccess = async () => {
           console.log("Task updated\n", "Updated Task: ", newTask);
           render();
           readyToSync = false;
           await snoutApi.updateGist(snoutDB);
-          
           await delay(1000);
           readyToSync = true;
       };
@@ -297,8 +289,9 @@ function renderTasks() {
               </div>
             </div>
             <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.uniqueId}">
-              <div class="hidden absolute mt-20 w-16 rounded-lg" id="task-option-menu-${task.uniqueId}">
-                <button class="w-full h-8 rounded-lg bg-snout-deep text-snout-light" id="delete-button-${task.uniqueId}">x</button>
+              <div class="hidden absolute mt-24 w-16 rounded-lg bg-snout-deep shadow-lg" id="task-option-menu-${task.uniqueId}">
+                <button class="w-full h-8 rounded-lg text-snout-light hover:bg-blue-600 transition duration-200" id="edit-button-${task.uniqueId}">Edit</button>
+                <button class="w-full h-8 rounded-lg text-snout-light hover:bg-red-600 transition duration-200" id="delete-button-${task.uniqueId}">&times;</button>
               </div>
               <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
               <div class="w-[5px] h-[5px] rounded-full bg-snout-bright"></div>
@@ -320,6 +313,10 @@ function renderTasks() {
       for (const task of tasks) {
         document.getElementById(`task-options-${task.uniqueId}`)?.addEventListener('click', function() {
           document.getElementById(`task-option-menu-${task.uniqueId}`)?.classList.toggle('hidden');
+        })
+
+        document.getElementById(`edit-button-${task.uniqueId}`)?.addEventListener('click', function() {
+          console.log("Editing task: ", task.uniqueId);
         })
 
         document.getElementById(`delete-button-${task.uniqueId}`)?.addEventListener('click', function() {
