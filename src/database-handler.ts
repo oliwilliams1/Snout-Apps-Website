@@ -7,7 +7,8 @@ const priorityDropdown = document.getElementById("priorityList") as HTMLSelectEl
 const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
-const syncBar = document.getElementById('sync-bar');
+const syncBar = document.getElementById('syncBar');
+const syncButton = document.getElementById('syncButton');
 
 let taskUpdating : boolean = false;
 let taskUpdatingId : number = -1;
@@ -595,6 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
       additionalFields.classList.add('show');
     }
   });
+
+  syncButton?.addEventListener('click', sync);
 
   addTaskButton?.addEventListener('click', addTaskButtonCallback);
 

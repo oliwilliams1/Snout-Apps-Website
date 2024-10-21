@@ -39,8 +39,5 @@ On this page you should fill in the form as usual, but under Permissions > Accou
 
 # Features to add
 ### TODO app:
-- Visual indicator for done tasks
-- Indicator for if local data has been synced or not
-- Sync button
 - Task due date
 - Additional data for tasks (bring up modal to put text it)
