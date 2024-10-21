@@ -285,7 +285,7 @@ function renderTasks() {
           <div class="flex w-full items-center">
             <div class="rounded-full ${priorityColour} w-1 h-10"></div>
             <div class="flex flex-row items-center ml-4">
-              <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded">
+              <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded" id="task-checkbox-${task.uniqueId}">
               <div>
                 <h1 class="text-lg font-semibold text-snout-bright">${task.title}</h1>
                 ${task.description ? `<h2 class="text-xs font-extralight text-snout-light">${task.description}</h2>` : ""}
@@ -326,6 +326,15 @@ function renderTasks() {
         document.getElementById(`delete-button-${task.uniqueId}`)?.addEventListener('click', function() {
           deleteTask(task.uniqueId);
         });
+
+        const checkbox = document.getElementById(`task-checkbox-${task.uniqueId}`) as HTMLInputElement | null;
+        checkbox?.addEventListener('change', function() {
+          if (checkbox) {
+            task.completed = checkbox.checked;
+            task.dateAdded = new Date().toISOString();
+            updateTask(task);
+          }
+      });
       }
     }
   };

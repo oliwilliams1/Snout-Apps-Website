@@ -10,6 +10,7 @@ module.exports = {
         'snout-deep': '#343a40',
         'snout-light': '#ffffff',
         'snout-bright': '#d9d9d9',
+        'snout-deep-bright': '#81888f',
       },
     },
   },
