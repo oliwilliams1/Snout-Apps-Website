@@ -8,6 +8,9 @@ const additionalFields = document.getElementById('additionalFields');
 const addTaskButton = document.getElementById('addTask');
 const priorityGlance = document.getElementById('priorityGlance');
 
+let taskUpdating : boolean = false;
+let taskUpdatingId : number = -1;
+
 const snoutDB: snoutApi.SnoutDbData = {
   dbName: "TodoDB",
   storeName: "tasks",
@@ -317,6 +320,7 @@ function renderTasks() {
 
         document.getElementById(`edit-button-${task.uniqueId}`)?.addEventListener('click', function() {
           console.log("Editing task: ", task.uniqueId);
+          updateTaskButtonCallback(task);
         })
 
         document.getElementById(`delete-button-${task.uniqueId}`)?.addEventListener('click', function() {
@@ -347,12 +351,36 @@ function addTaskButtonCallback() {
     uniqueId: -1
   };
 
-  addTask(task);
+  if (taskUpdating === true) {
+    task.uniqueId = taskUpdatingId;
+    updateTask(task);
+    console.log("Task updated: ", task);
+    taskUpdating = false;
+  } else {
+    addTask(task);
+    console.log("Task added: ", task);
+  }
 
   additionalFields.classList.remove('show');
   mainInputBox.value = "";
   secondaryInputBox.value = "";
   priorityDropdown.value = "-1";
+}
+
+function updateTaskButtonCallback(task : snoutApi.Task) {
+  if (!additionalFields) {
+    console.log("Additional fields element not found");
+    return;
+  }
+
+  taskUpdating = true;
+  taskUpdatingId = task.uniqueId;
+
+  additionalFields.classList.add('show');
+
+  mainInputBox.value = task.title;
+  secondaryInputBox.value = task.description;
+  priorityDropdown.value = task.priority.toString();
 }
 
 function deleteMainDB() {
