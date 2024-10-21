@@ -59,6 +59,7 @@
       </div>
     </div>
 
+    <!-- Calander select modal -->
     <div id="calendarSelectModal" class="fixed hidden bottom-0 inset-x-0 p-12 pt-6 items-center justify-center backdrop-blur-sm z-10 bg-snout-deep-dark rounded-t-lg shadow-lg">
       <p class="text-center text-snout-light text-xl font-bold mb-4">Please select a date:</p>
       <div class="w-full mx-auto">
@@ -95,13 +96,13 @@
     <!-- Entry box -->
     <div class="px-8 py-2 overflow-clip">
       <div class="w-full">
-        <input type="text" id="mainInput" class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Add a task">
+        <input type="text" id="mainInput" autocomplete="off" class="w-full h-12 focus:outline-none shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Add a task">
       </div>
-      <div id="additionalFields" class="w-full mt-4 additionalFields"></div>
+      <div id="additionalFields" class="w-full mt-4 additionalFields">
         <div class="flex w-full gap-4">
-          <input type="text" id="secondaryInput" class="w-full mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Description">
+          <input type="text" id="secondaryInput" autocomplete="off" class="w-full focus:outline-none mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Description">
           <form>
-            <select id="priorityList" name="priority" class="mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light flex-shrink-0">
+            <select id="priorityList" name="priority" class="mb-4 h-12 shadow-lg focus:outline-none bg-snout-deep rounded-lg px-4 text-snout-light flex-shrink-0">
               <option value="-1">Select Priority</option>
               <option value="1">High</option>
               <option value="2">Medium</option>
@@ -111,8 +112,8 @@
           </form>
         </div>
         <div class="flex gap-4">
-          <button class="w-[calc(100%-4rem)] h-12 bg-snout-deep rounded-lg flex-shrink-0 text-snout-light" id="selectDateButton">Select custom date</button>
-          <button class="inline-block w-12 h-12 bg-snout-deep rounded-full flex-shrink-0 text-snout-light" id="addTask">+</button>
+          <button class="w-[calc(100%-4rem)] h-12 bg-snout-deep focus:outline-none rounded-lg flex-shrink-0 text-snout-light" id="selectDateButton">Select custom date</button>
+          <button class="inline-block w-12 h-12 bg-snout-deep focus:outline-none rounded-full flex-shrink-0 text-snout-light" id="addTask">+</button>
         </div>
       </div>
     </div>

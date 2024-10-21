@@ -259,6 +259,10 @@ function renderPriorityGlance() {
   };
 }
 
+function dateStrToFormattedDate(x : string) : string {
+  return new Date(x).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+}
+
 function renderTasks() {
   const transaction = snoutDB.db.transaction([snoutDB.storeName], "readonly");
   const store = transaction.objectStore(snoutDB.storeName);
@@ -293,9 +297,20 @@ function renderTasks() {
             <div class="rounded-full ${priorityColour} w-1 h-10"></div>
             <div class="flex flex-row items-center ml-4">
               <input type="checkbox" ${task.completed ? "checked" : ""} class="w-5 h-6 mr-4 rounded" id="task-checkbox-${task.uniqueId}">
-              <div>
-                <h1 class="text-lg font-semibold text-snout-bright">${task.completed ? "<s>" + task.title + "</s>" : task.title}</h1>
-                ${task.description ? `<h2 class="text-xs font-extralight text-snout-bright">${task.completed ? "<s>" + task.description + "</s>" : task.description}</h2>` : ""}
+              <div class="w-[21rem]">
+                <h1 class="text-lg font-semibold text-snout-bright">
+                  ${task.completed ? "<s>" + task.title + "</s>" : task.title}
+                </h1>
+                <div class="flex items-center">
+                  ${task.description ? `
+                    <h2 class="text-xs font-extralight text-snout-bright mr-2">
+                      ${task.completed ? "<s>" + task.description + "</s>" : task.description}
+                    </h2>` : ""}
+                  ${task.dateDueBool ? `
+                    <h2 class="text-xs font-extralight text-snout-bright ml-auto">
+                      Due: ${task.completed ? "<s>" + dateStrToFormattedDate(task.dateDue) + "</s>" : dateStrToFormattedDate(task.dateDue)}
+                    </h2>` : ""}
+                </div>
               </div>
             </div>
             <div class="flex w-8 h-8 gap-1 ml-auto mr-3 cursor-pointer bg-snout-deep rounded-full justify-center items-center" id="task-options-${task.uniqueId}">
@@ -631,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
   selectDateButton?.addEventListener('click', selectDateButtonCallback);
 
   calandarModalSelectDateButton?.addEventListener('click', () => {setSelectedDateCallback(calendarInstance)});
-  // setTimeout(sync, 1000);
+  setTimeout(sync, 1000);
 
   setInterval(() => {
     if (readyToSync) sync(); else console.log("Sync is not ready yet, waiting for next iteration...");

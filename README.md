@@ -39,5 +39,4 @@ On this page you should fill in the form as usual, but under Permissions > Accou
 
 # Features to add
 ### TODO app:
-- Task due date
 - Additional data for tasks (bring up modal to put text it)
