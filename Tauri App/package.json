@@ -7,7 +7,7 @@
     "build:css-release": "tailwindcss -i ./src/styles.css -o ./src/output.css",
     "build:vite-release": "tsc && vite build",
     "tauri:build-release": "tauri build",
-    "build": "build:css-release && build:vite-release && tauri build",
+    "build": "build:css-release && build:vite-release && tauri:build-release",
     "build:css": "tailwindcss -i ./src/styles.css -o ./src/output.css --watch",
     "build:vite": "tsc && vite build --watch",
     "tauri:dev": "tauri dev",

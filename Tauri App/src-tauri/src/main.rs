@@ -23,16 +23,12 @@ fn close_window(window: Window) {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![set_window_position, close_window])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             main_window.set_title("Snout Apps")?;
+            main_window.eval("window.location.href = 'https://www.google.com';")?;
             Ok(())
         })
-        .run({
-            #[allow(unused_must_use)]
-            let context = tauri::generate_context!();
-            context
-        })
+        .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
