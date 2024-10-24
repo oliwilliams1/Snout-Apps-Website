@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <title>Tauri App</title>
+
+    <!-- Scripts -->
+    <!-- <script type="module" src="src/main.ts" defer></script> -->
+    <script type="module" crossorigin src="/Snout-Apps-Website/assets/index-C8FcnJTF.js"></script>
+    <link rel="stylesheet" crossorigin href="/Snout-Apps-Website/assets/index-CRke1lpO.css">
+  </head>
+  <body class="bg-snout-base">
+    <!-- Warning Modal -->
+    <div id="warningModal" class="absolute hidden inset-0 backdrop-blur-sm z-10 items-center justify-center">
+      <div class="bg-snout-light rounded-lg shadow-lg p-6 max-w-md text-center">
+        <h2 class="text-3xl text-snout-base font-bold mb-4">Attention Required!</h2>
+        <p class="text-md text-gray-700 mb-6">
+          Your GitHub gist's or Github token is either out-of-date or not set. This will make this application unusable.
+        </p>
+        <p class="text-sm text-gray-500 mb-4">
+          Please enter your Gist ID and GitHub Token in the form below.
+        </p>
+        <div class="flex flex-col gap-4">
+          <input
+            type="text"
+            id="gistIdInput"
+            autocomplete="off"
+            class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Gist ID"
+            aria-label="Gist ID"
+            required
+          />
+          <input
+            type="text"
+            id="tokenInput"
+            autocomplete="off"
+            class="w-full h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="GitHub Token"
+            aria-label="GitHub Token"
+            required
+          />
+          <button id="updateButton" class="bg-blue-500 hover:bg-blue-600 font-bold h-12 py-2 px-4 rounded-lg flex-shrink-0 text-snout-light transition duration-200 ease-in-out">
+            Update
+          </button>
+        </div>
+        <div class="mt-6">
+          <p class="text-sm text-gray-500">
+            Once set, click the "Update" button to save your data to the browser.
+          </p>
+          <p class="text-sm text-gray-500">
+            Your token is stored securely via cookies.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calander select modal -->
+    <div id="calendarSelectModal" class="fixed hidden bottom-0 inset-x-0 p-12 pt-6 items-center justify-center backdrop-blur-sm z-10 bg-snout-deep-dark rounded-t-lg shadow-lg">
+      <button id="calendarCloseButton" class="absolute top-4 right-4 w-8 h-8 rounded-full text-snout-light bg-red-500">&times;</button>
+      <p class="text-center text-snout-light text-xl font-bold mb-4">Please select a date:</p>
+      <div class="w-full mx-auto">
+        <div id="color-calendar"></div>
+        <input type="time" name="time-picker" id="timePicker" class="mt-4 p-4 w-full h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      </div>
+      <button id="calandarModalSelectDateButton" class="bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 font-bold h-12 py-2 px-4 rounded-lg text-white transition duration-200 ease-in-out mt-6 w-full">Select Date</button>
+    </div>
+
+    <!-- Task viewer modal -->
+    <div id="taskViewerModal" class="absolute hidden inset-0 flex items-center justify-center backdrop-blur-sm z-10 p-4">    </div>
+
+    <!-- Navigation panel -->
+    <div class="flex justify-center w-full h-8 mt-2">
+      <div class="w-5 mr-auto ml-8 my-auto">
+        <img src="data:image/svg+xml,%3csvg%20viewBox='0%200%20532%20532'%20xmlns='http://www.w3.org/2000/svg'%20%3e%3cpath%20d='M355.66%2011.354c13.793-13.805%2036.208-13.805%2050.001%200%2013.785%2013.804%2013.785%2036.238%200%2050.034L201.22%20266l204.442%20204.61c13.785%2013.805%2013.785%2036.239%200%2050.044-13.793%2013.796-36.208%2013.796-50.002%200a5994246.277%205994246.277%200%200%200-229.332-229.454%2035.065%2035.065%200%200%201-10.326-25.126c0-9.2%203.393-18.26%2010.326-25.2C172.192%20194.973%20332.731%2034.31%20355.66%2011.354Z'%20fill='white'%20stroke='currentColor'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='2'%20/%3e%3c/svg%3e" alt="Back arrow">
+      </div>
+      <div class="flex justify-center items-center gap-4 text-snout-light">
+          <p id="tab-1">Today</p>
+          <p>Calendar</p>
+      </div>
+      <div class="w-5 ml-auto mr-8 my-auto" style="transform: scale(-1, 1)">
+        <img src="data:image/svg+xml,%3csvg%20viewBox='0%200%20532%20532'%20xmlns='http://www.w3.org/2000/svg'%20%3e%3cpath%20d='M355.66%2011.354c13.793-13.805%2036.208-13.805%2050.001%200%2013.785%2013.804%2013.785%2036.238%200%2050.034L201.22%20266l204.442%20204.61c13.785%2013.805%2013.785%2036.239%200%2050.044-13.793%2013.796-36.208%2013.796-50.002%200a5994246.277%205994246.277%200%200%200-229.332-229.454%2035.065%2035.065%200%200%201-10.326-25.126c0-9.2%203.393-18.26%2010.326-25.2C172.192%20194.973%20332.731%2034.31%20355.66%2011.354Z'%20fill='white'%20stroke='currentColor'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='2'%20/%3e%3c/svg%3e" alt="Forward arrow">
+      </div>
+    </div>
+
+    <div class="h-1.5 shadow-md rounded-b-full bg-snout-light mt-[-0.25rem]" id="segmentVisualiser"></div>
+
+    <!-- Date and quick glance at task priority thing -->
+    <div class="flex px-8 py-2">
+      <div class="w-[50%]">
+        <h1 class="text-[3rem] font-semibold text-snout-light" id="dayName">Monday</h1>
+        <h2 class="text-[1.15rem] font-normal text-snout-light" id="date">September 25, 2024</h2>
+      </div>
+        <div class="flex w-[50%] gap-2 items-center justify-end" id="priorityGlance"></div>
+    </div>
+
+    <!-- Entry box -->
+    <div class="px-8 py-2 overflow-clip">
+      <div class="w-full">
+        <input type="text" id="mainInput" autocomplete="off" class="w-full h-12 focus:outline-none shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Add a task">
+      </div>
+      <div id="additionalFields" class="w-full mt-4 additionalFields">
+        <div class="flex w-full gap-4">
+          <input type="text" id="secondaryInput" autocomplete="off" class="w-full focus:outline-none mb-4 h-12 shadow-lg bg-snout-deep rounded-lg px-4 text-snout-light" placeholder="Description">
+          <form>
+            <select id="priorityList" name="priority" class="mb-4 h-12 shadow-lg focus:outline-none bg-snout-deep rounded-lg px-4 text-snout-light flex-shrink-0">
+              <option value="-1">Select Priority</option>
+              <option value="1">High</option>
+              <option value="2">Medium</option>
+              <option value="3">Low</option>
+              <option value="4">No Priority</option>
+            </select>
+          </form>
+        </div>
+        <div class="flex gap-4">
+          <button class="w-[calc(100%-4rem)] h-12 bg-snout-deep focus:outline-none rounded-lg flex-shrink-0 text-snout-light" id="selectDateButton">Select custom date</button>
+          <button class="inline-block w-12 h-12 bg-snout-deep focus:outline-none rounded-full flex-shrink-0 text-snout-light" id="addTask">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="flex flex-col pl-5 pr-8 py-2 items-start" id="priorityTaskContainer"></div>
+
+    <!-- Divider -->
+    <div class="flex px-8">
+      <div class="w-full h-1 bg-snout-deep rounded-full"></div>
+    </div>
+
+    <!-- Non-priority tasks -->
+    <div class="flex flex-col pl-5 pr-8 py-2 items-start" id="nonPriorityTaskContainer"></div>
+
+    <!-- Sync bar -->
+    <div id="syncBar" class="absolute hidden bottom-0 left-0 w-full h-2 bg-gradient-to-r from-gradient-start via-gradient-middle to-gradient-end bg-[length:400%_400%] animate-gradientShift"></div>
+    
+    <!-- Sync button -->
+    <div id="syncButton" class="absolute bottom-4 right-4 z-20 w-6 h-6 cursor-pointer">
+      <img src="data:image/svg+xml,%3c?xml%20version='1.0'%20encoding='utf-8'?%3e%3c!--%20Uploaded%20to:%20SVG%20Repo,%20www.svgrepo.com,%20Generator:%20SVG%20Repo%20Mixer%20Tools%20--%3e%3csvg%20fill='%232899f3'%20width='800px'%20height='800px'%20viewBox='0%200%20512%20512'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M440.65%2012.57l4%2082.77A247.16%20247.16%200%200%200%20255.83%208C134.73%208%2033.91%2094.92%2012.29%20209.82A12%2012%200%200%200%2024.09%20224h49.05a12%2012%200%200%200%2011.67-9.26%20175.91%20175.91%200%200%201%20317-56.94l-101.46-4.86a12%2012%200%200%200-12.57%2012v47.41a12%2012%200%200%200%2012%2012H500a12%2012%200%200%200%2012-12V12a12%2012%200%200%200-12-12h-47.37a12%2012%200%200%200-11.98%2012.57zM255.83%20432a175.61%20175.61%200%200%201-146-77.8l101.8%204.87a12%2012%200%200%200%2012.57-12v-47.4a12%2012%200%200%200-12-12H12a12%2012%200%200%200-12%2012V500a12%2012%200%200%200%2012%2012h47.35a12%2012%200%200%200%2012-12.6l-4.15-82.57A247.17%20247.17%200%200%200%20255.83%20504c121.11%200%20221.93-86.92%20243.55-201.82a12%2012%200%200%200-11.8-14.18h-49.05a12%2012%200%200%200-11.67%209.26A175.86%20175.86%200%200%201%20255.83%20432z'/%3e%3c/svg%3e" alt="sync">
+    </div>
+  </body>
+</html>
