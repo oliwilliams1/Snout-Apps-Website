@@ -218,7 +218,7 @@ File: ${e}`)}catch(n){console.error("Error updating the gist:",n)}}async functio
             <div class="rounded-full ${h} w-1 h-10"></div>
             <div class="flex flex-row items-center ml-4">
               <input type="checkbox" ${u.completed?"checked":""} class="w-5 h-6 mr-4 rounded" id="task-checkbox-${u.uniqueId}">
-              <div class="w-[21rem] ${u.dateDueBool&&!u.description?"flex items-center":""}" id="task-container-${u.uniqueId}">
+              <div class="w-[calc(100vw-11rem)] ${u.dateDueBool&&!u.description?"flex items-center":""}" id="task-container-${u.uniqueId}">
                 <h1 class="text-lg font-semibold ${u.dateDueBool&&!u.description?"max-w-44":""} text-snout-bright truncate">
                   ${u.completed?"<s>"+u.title+"</s>":u.title}
                 </h1>
