@@ -1,7 +1,7 @@
 {
     "name": "Snout Apps",
     "short_name": "Todo list",
-    "start_url": "/index.html",
+    "start_url": "/Snout-Apps-Website/index.html",
     "display": "standalone",
     "background_color": "#3c424a",
     "theme_color": "#000000",
