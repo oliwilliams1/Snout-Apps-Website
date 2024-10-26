@@ -4,9 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My App</title>
-  <link rel="stylesheet" crossorigin href="/Snout-Apps-Website/assets/chatbot-gW1hR4Ow.css">
+  <script type="module" crossorigin src="/Snout-Apps-Website/assets/chatbot-eDcm9wKL.js"></script>
+  <link rel="modulepreload" crossorigin href="/Snout-Apps-Website/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="stylesheet" crossorigin href="/Snout-Apps-Website/assets/chatbot-BqQNZNk8.css">
 </head>
 <body>
+  <div id="warningModal" class="warningModal hidden">
+    <div class="overlayContainer">
+      <h2 class="attentionText">Attention Required!</h2>
+      <p class="warningText">Your gemini API key has not been set. This will make this application unusable.</p>
+      <p class="infoText">Please enter your Gemini API key in the form below.</p>
+      <input type="text" id="apiKeyInput" autocomplete="off" placeholder="API Key" required>
+      <button id="updateButton">Update</button>
+    </div>
+  </div>
   <div class="chat-container">
     <div class="chats" id="AI-UI"></div>
     <div class="message-container">
@@ -14,6 +25,6 @@
       <textarea placeholder="Type your message..." id="entry-box" rows="3"></textarea>
       <div class="button" id="send-button"></div>
     </div>
-  </div>
+  </div>
 </body>
 </html>
