@@ -1,7 +1,7 @@
 import Calendar from "color-calendar";
 import "color-calendar/dist/css/theme-basic.css";
-import yaml from 'yaml';
-import * as snoutApi from './sync-tasks';
+import yaml from "yaml";
+import * as snoutApi from "./sync-tasks";
 
 const mainInputBox = document.getElementById("mainInput") as HTMLInputElement;
 const secondaryInputBox = document.getElementById("secondaryInput") as HTMLInputElement;

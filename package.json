@@ -9,7 +9,7 @@
     "build-ts": "tsc --watch",
     "preview": "vite preview",
     "vite": "vite",
-    "build": "tailwindcss -i ./src/style.css -o ./dist/output.css && tsc && vite build",
+    "build": "tailwindcss -i ./src/todo/styles.css -o ./dist/todo/output.css && tsc && vite build",
     "git subtree push --prefix dist origin gh-pages": ""
   },
   "devDependencies": {
