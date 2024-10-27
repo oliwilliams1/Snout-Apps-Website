@@ -1,13 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar</title>
-    <script type="module" src="main.ts"></script>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar</title>
+  <script type="module" src="main.ts"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="calendar"></div>
+  <div class="navPanel">
+    <div class="backArrowContainer">
+      <img src="../assets/arrow.svg" alt="Back arrow">
+    </div>
+    <div class="navItems">
+      <p>Today</p>
+      <p id="tab-2">Calendar</p>
+    </div>
+    <div class="forwardArrowContainer">
+      <img src="../assets/arrow.svg" alt="Forward arrow">
+    </div>
+  </div>
+  <div id="segmentVisualiser"></div>
+
+  <div class="calendarContainer" id="calendar"></div>
+
 </body>
 </html>
