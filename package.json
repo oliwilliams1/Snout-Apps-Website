@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"npm run build-css\" \"npm run build-ts\"",
-    "build-css": "tailwindcss -i ./src/style.css -o ./dist/output.css --watch",
+    "build-css": "tailwindcss -i ./src/todo/styles.css -o ./dist/todo/output.css --watch",
     "build-ts": "tsc --watch",
     "preview": "vite preview",
     "vite": "vite",
@@ -21,8 +21,11 @@
     "vite": "^5.4.9"
   },
   "dependencies": {
+    "@fullcalendar/timegrid": "^6.1.15",
     "@octokit/core": "^6.1.2",
     "color-calendar": "^1.0.7",
+    "fullcalendar": "^6.1.15",
+    "fullcalendar-scheduler": "^6.1.15",
     "highlight.js": "^11.10.0",
     "markdown-it": "^14.1.0"
   }
